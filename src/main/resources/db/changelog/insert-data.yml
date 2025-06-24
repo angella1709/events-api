@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: insert-categories
+      author: angella
+      changes:
+        - insert:
+            tableName: category
+            columns:
+              - column:
+                  name: created_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: name
+                  value: Кино
+        - insert:
+            tableName: category
+            columns:
+              - column:
+                  name: created_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: name
+                  value: Музыка
