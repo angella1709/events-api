@@ -55,33 +55,6 @@ databaseChangeLog:
             columnNames: user_id, roles
             constraintName: usr_role_unique
             tableName: user_roles
-        - createTable:
-            tableName: organization
-            columns:
-              - column:
-                  name: id
-                  type: bigserial
-                  constraints:
-                    primaryKey: true
-              - column:
-                  name: created_at
-                  type: timestamp with time zone
-              - column:
-                  name: updated_at
-                  type: timestamp with time zone
-              - column:
-                  name: name
-                  type: varchar(255)
-                  constraints:
-                    unique: true
-              - column:
-                  name: owner_id
-                  type: bigint
-                  constraints:
-                    nullable: false
-                    referencedTableName: usr
-                    referencedColumnNames: id
-                    foreignKeyName: fk_org_owner_id
 
         - createTable:
             tableName: category
@@ -102,28 +75,6 @@ databaseChangeLog:
                   type: varchar(255)
                   constraints:
                     unique: true
-
-        - createTable:
-            tableName: user_organization_subscription
-            columns:
-              - column:
-                  name: user_id
-                  type: bigint
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-                    referencedTableName: usr
-                    referencedColumnNames: id
-                    foreignKeyName: fk_user_org_sub_user_id
-              - column:
-                  name: organization_id
-                  type: bigint
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-                    referencedTableName: organization
-                    referencedColumnNames: id
-                    foreignKeyName: fk_user_org_sub_org_id
 
         - createTable:
             tableName: user_category_subscription
@@ -224,13 +175,13 @@ databaseChangeLog:
                     referencedColumnNames: id
                     foreignKeyName: fk_event_location_id
               - column:
-                  name: organization_id
+                  name: creator_id
                   type: bigint
                   constraints:
                     nullable: false
-                    referencedTableName: organization
+                    referencedTableName: usr
                     referencedColumnNames: id
-                    foreignKeyName: fk_event_org_id
+                    foreignKeyName: fk_event_creator_id
               - column:
                   name: schedule_id
                   type: bigint

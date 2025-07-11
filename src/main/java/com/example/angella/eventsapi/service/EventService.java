@@ -1,7 +1,7 @@
 package com.example.angella.eventsapi.service;
 
-import com.example.angella.eventsapi.entity.BaseEntity;
 import com.example.angella.eventsapi.entity.Event;
+import com.example.angella.eventsapi.entity.User;
 import com.example.angella.eventsapi.event.model.EmailNotificationEvent;
 import com.example.angella.eventsapi.exception.AccessDeniedException;
 import com.example.angella.eventsapi.exception.EntityNotFoundException;
@@ -28,17 +28,10 @@ import java.util.stream.Collectors;
 public class EventService {
 
     private final EventRepository eventRepository;
-
     private final CategoryService categoryService;
-
     private final ScheduleRepository scheduleRepository;
-
     private final LocationRepository locationRepository;
-
-    private final OrganizationService organizationService;
-
     private final UserService userService;
-
     private final ApplicationEventPublisher eventPublisher;
 
     public List<Event> findAll() {
@@ -53,38 +46,31 @@ public class EventService {
     }
 
     public Event getById(Long eventId) {
-        return eventRepository.findById(eventId).orElseThrow(() -> new EntityNotFoundException(
-                MessageFormat.format("Event with id {0} not found!", eventId)
-        ));
+        return eventRepository.findById(eventId).orElseThrow(() ->
+                new EntityNotFoundException(
+                        MessageFormat.format("Event with id {0} not found!", eventId)
+                ));
     }
 
     @Transactional
-    public Event create(Event event) {
+    public Event create(Event event, Long creatorId) {
         event.setCategories(categoryService.upsertCategories(event.getCategories()));
-
         event.setSchedule(scheduleRepository.save(event.getSchedule()));
 
         var location = locationRepository.findByCityAndStreet(
-                        event.getLocation().getCity(), event.getLocation().getStreet()
-                )
+                        event.getLocation().getCity(),
+                        event.getLocation().getStreet())
                 .orElseGet(() -> locationRepository.save(event.getLocation()));
         event.setLocation(location);
 
-        var organization = organizationService.findById(event.getOrganization().getId());
+        User creator = userService.findById(creatorId);
+        event.setCreator(creator);
 
-        if (event.getOrganization().isNotSameOwner(organization.getOwner().getId())) {
-            throw new AccessDeniedException("User is not owner!");
-        }
-
-        organization.addEvent(event);
-        event.setOrganization(organization);
-
-        var savedEvent = eventRepository.save(event);
+        Event savedEvent = eventRepository.save(event);
 
         eventPublisher.publishEvent(new EmailNotificationEvent(
                 this,
-                event.getCategories().stream().map(BaseEntity::getId).collect(Collectors.toSet()),
-                organization.getId(),
+                event.getCategories().stream().map(c -> c.getId()).collect(Collectors.toSet()),
                 event.getName()
         ));
 
@@ -92,24 +78,30 @@ public class EventService {
     }
 
     @Transactional
-    public Event update(Long eventId, Event eventForUpdate) {
-        var currentEvent = getById(eventId);
+    public Event update(Long eventId, Event eventForUpdate, Long currentUserId) {
+        Event currentEvent = getById(eventId);
+
+        if (!currentEvent.getCreator().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("Only event creator can update the event");
+        }
 
         if (eventForUpdate.getName() != null &&
                 !Objects.equals(eventForUpdate.getName(), currentEvent.getName())) {
             currentEvent.setName(eventForUpdate.getName());
         }
+
         if (eventForUpdate.getStartTime() != null &&
-                !Objects.equals(eventForUpdate.getStartTime(), currentEvent.getEndTime())) {
+                !Objects.equals(eventForUpdate.getStartTime(), currentEvent.getStartTime())) {
             currentEvent.setStartTime(eventForUpdate.getStartTime());
         }
+
         if (eventForUpdate.getEndTime() != null &&
                 !Objects.equals(eventForUpdate.getEndTime(), currentEvent.getEndTime())) {
             currentEvent.setEndTime(eventForUpdate.getEndTime());
         }
 
-        var currentSchedule = currentEvent.getSchedule();
-        var updatedSchedule = eventForUpdate.getSchedule();
+        Schedule currentSchedule = currentEvent.getSchedule();
+        Schedule updatedSchedule = eventForUpdate.getSchedule();
         if (updatedSchedule != null && StringUtils.isNoneBlank(updatedSchedule.getDescription()) &&
                 !Objects.equals(currentSchedule.getDescription(), updatedSchedule.getDescription())) {
             currentSchedule.setDescription(updatedSchedule.getDescription());
@@ -124,36 +116,38 @@ public class EventService {
 
     @Transactional
     public boolean addParticipant(Long eventId, Long participantId) {
-        var event = getById(eventId);
-        var participant = userService.findById(participantId);
-        var isAdded = event.addParticipant(participant);
+        Event event = getById(eventId);
+        User participant = userService.findById(participantId);
+        boolean isAdded = event.addParticipant(participant);
 
-        if (!isAdded) {
-            return false;
+        if (isAdded) {
+            eventRepository.save(event);
         }
 
-        eventRepository.save(event);
-
-        return true;
+        return isAdded;
     }
 
     @Transactional
     public boolean removeParticipant(Long eventId, Long participantId) {
-        var event = getById(eventId);
-        var participant = userService.findById(participantId);
-        var isRemoved = event.removeParticipant(participant);
+        Event event = getById(eventId);
+        User participant = userService.findById(participantId);
+        boolean isRemoved = event.removeParticipant(participant);
 
-        if (!isRemoved) {
-            return false;
+        if (isRemoved) {
+            eventRepository.save(event);
         }
 
-        eventRepository.save(event);
-
-        return true;
+        return isRemoved;
     }
 
     @Transactional
-    public void deleteById(Long id) {
+    public void deleteById(Long id, Long currentUserId) {
+        Event event = getById(id);
+
+        if (!event.getCreator().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("Only event creator can delete the event");
+        }
+
         eventRepository.deleteById(id);
     }
 
@@ -162,6 +156,6 @@ public class EventService {
     }
 
     public boolean isEventCreator(Long eventId, Long userId) {
-        return eventRepository.existsByIdAndOrganizationOwnerId(eventId, userId);
+        return eventRepository.existsByIdAndCreatorId(eventId, userId);
     }
 }

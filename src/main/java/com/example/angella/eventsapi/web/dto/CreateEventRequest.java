@@ -39,9 +39,6 @@ public class CreateEventRequest {
     @NotBlank(message = "Street must be not blank!")
     private String streetLocation;
 
-    @NotNull(message = "Organization id must be set!")
-    private Long organizationId;
-
     @NotNull(message = "Id of creator must be set!")
     private Long creatorId;
 

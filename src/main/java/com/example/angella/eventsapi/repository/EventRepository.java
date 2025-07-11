@@ -14,19 +14,18 @@ import java.util.Optional;
 public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecificationExecutor<Event> {
 
     @Override
-    @EntityGraph(attributePaths = {"categories", "location", "organization", "schedule"})
+    @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator"})
     Page<Event> findAll(Specification<Event> spec, Pageable pageable);
 
     @Override
-    @EntityGraph(attributePaths = {"categories", "location", "organization", "schedule"})
+    @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator"})
     List<Event> findAll();
 
     @Override
-    @EntityGraph(attributePaths = {"categories", "location", "organization", "schedule"})
+    @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator"})
     Optional<Event> findById(Long id);
 
     boolean existsByIdAndParticipantsId(Long eventId, Long userId);
 
-    boolean existsByIdAndOrganizationOwnerId(Long eventId, Long userId);
-
+    boolean existsByIdAndCreatorId(Long eventId, Long userId);
 }

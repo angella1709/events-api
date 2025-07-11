@@ -52,8 +52,8 @@ public class Event extends BaseEntity {
     private Location location;
 
     @ManyToOne
-    @JoinColumn(name = "organization_id", nullable = false)
-    private Organization organization;
+    @JoinColumn(name = "creator_id", nullable = false)
+    private User creator;
 
     public boolean addParticipant(User participant) {
         return participants.add(participant) && participant.addEvent(this);

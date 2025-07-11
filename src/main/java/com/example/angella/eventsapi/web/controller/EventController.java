@@ -2,7 +2,6 @@ package com.example.angella.eventsapi.web.controller;
 
 import com.example.angella.eventsapi.aop.AccessCheckType;
 import com.example.angella.eventsapi.aop.Accessible;
-import com.example.angella.eventsapi.exception.AccessDeniedException;
 import com.example.angella.eventsapi.mapper.EventMapper;
 import com.example.angella.eventsapi.service.EventService;
 import com.example.angella.eventsapi.utils.AuthUtils;
@@ -15,9 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
-
 
 @RestController
 @RequestMapping("/api/v1/event")
@@ -25,66 +22,79 @@ import org.springframework.web.bind.annotation.*;
 public class EventController {
 
     private final EventService eventService;
-
     private final EventMapper eventMapper;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ROLE_ORGANIZATION_OWNER')")
-    public ResponseEntity<EventDto> createEvent(@AuthenticationPrincipal UserDetails userDetails, @RequestBody CreateEventRequest request) {
-        var isNotSameUser = !ObjectUtils.nullSafeEquals(request.getCreatorId(), AuthUtils.getCurrentUserId(userDetails));
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<EventDto> createEvent(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody CreateEventRequest request) {
 
-        if (isNotSameUser) {
-            throw new AccessDeniedException("You can't create event!");
-        }
+        Long creatorId = AuthUtils.getCurrentUserId(userDetails);
+        request.setCreatorId(creatorId);
 
-        var createdEvent = eventService.create(eventMapper.toEntity(request));
-        return ResponseEntity.status(HttpStatus.CREATED).body(eventMapper.toDto(createdEvent));
+        EventDto createdEvent = eventMapper.toDto(
+                eventService.create(eventMapper.toEntity(request), creatorId)
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_ORGANIZATION_OWNER')")
+    @PreAuthorize("hasRole('ROLE_USER')")
     @Accessible(checkBy = AccessCheckType.EVENT)
     public ResponseEntity<EventDto> updateEvent(
-            @RequestBody UpdateEventRequest request,
-            @PathVariable Long id
-    ) {
-        var updatedEvent = eventService.update(id, eventMapper.toEntity(request));
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            @RequestBody UpdateEventRequest request) {
 
-        return ResponseEntity.ok(eventMapper.toDto(updatedEvent));
+        Long currentUserId = AuthUtils.getCurrentUserId(userDetails);
+        EventDto updatedEvent = eventMapper.toDto(
+                eventService.update(id, eventMapper.toEntity(request), currentUserId)
+        );
+
+        return ResponseEntity.ok(updatedEvent);
     }
 
     @PutMapping("/{id}/participant")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ORGANIZATION_OWNER')")
-    public ResponseEntity<String> addParticipantToEvent(@AuthenticationPrincipal UserDetails userDetails,
-                                                        @PathVariable Long id) {
-        var isAdded = eventService.addParticipant(id, AuthUtils.getCurrentUserId(userDetails));
-        if (isAdded) {
-            return ResponseEntity.ok("User was add to event");
-        } else {
-            return ResponseEntity.badRequest().body("Can't set user on event");
-        }
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<String> addParticipantToEvent(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+
+        Long participantId = AuthUtils.getCurrentUserId(userDetails);
+        boolean isAdded = eventService.addParticipant(id, participantId);
+
+        return isAdded ?
+                ResponseEntity.ok("User was added to event") :
+                ResponseEntity.badRequest().body("Can't add user to event");
     }
 
     @DeleteMapping("/{id}/participant")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ORGANIZATION_OWNER')")
+    @PreAuthorize("hasRole('ROLE_USER')")
     @Accessible(checkBy = AccessCheckType.PARTICIPANT)
-    public ResponseEntity<String> removeParticipantFromEvent(@AuthenticationPrincipal UserDetails userDetails,
-                                                             @PathVariable Long id) {
-        var isRemoved = eventService.removeParticipant(id, AuthUtils.getCurrentUserId(userDetails));
-        if (isRemoved) {
-            return ResponseEntity.ok("User was remove from event");
-        } else {
-            return ResponseEntity.badRequest().body("Can't remove user from event");
-        }
+    public ResponseEntity<String> removeParticipantFromEvent(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+
+        Long participantId = AuthUtils.getCurrentUserId(userDetails);
+        boolean isRemoved = eventService.removeParticipant(id, participantId);
+
+        return isRemoved ?
+                ResponseEntity.ok("User was removed from event") :
+                ResponseEntity.badRequest().body("Can't remove user from event");
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_ORGANIZATION_OWNER')")
+    @PreAuthorize("hasRole('ROLE_USER')")
     @Accessible(checkBy = AccessCheckType.EVENT)
-    public ResponseEntity<?> deleteEvent(@PathVariable Long id) {
-        eventService.deleteById(id);
+    public ResponseEntity<Void> deleteEvent(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+
+        Long currentUserId = AuthUtils.getCurrentUserId(userDetails);
+        eventService.deleteById(id, currentUserId);
 
         return ResponseEntity.noContent().build();
     }
-
 }

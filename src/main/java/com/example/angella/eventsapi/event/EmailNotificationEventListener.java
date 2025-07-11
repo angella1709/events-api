@@ -18,7 +18,6 @@ public class EmailNotificationEventListener {
     public void onEvent(EmailNotificationEvent event) {
         log.info("Send email for subscribers. Event: " + event);
         subscriptionService.sendNotifications(
-                event.getOrganization(),
                 event.getCategories(),
                 event.getEventName()
         );

@@ -12,20 +12,22 @@ import java.util.Set;
 
 @Mapper(
         componentModel = MappingConstants.ComponentModel.SPRING,
-        unmappedTargetPolicy = ReportingPolicy.IGNORE
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        uses = {CategoryMapper.class, UserMapper.class}
 )
 public interface EventMapper {
 
     @Mapping(target = "schedule.description", source = "schedule")
     @Mapping(target = "location.city", source = "cityLocation")
     @Mapping(target = "location.street", source = "streetLocation")
-    @Mapping(target = "organization.id", source = "organizationId")
-    @Mapping(target = "organization.owner.id", source = "creatorId")
+    @Mapping(target = "creator.id", source = "creatorId")
     Event toEntity(CreateEventRequest request);
 
     @Mapping(target = "schedule.description", source = "schedule")
     Event toEntity(UpdateEventRequest request);
 
+    @Mapping(target = "categories", source = "categories")
+    @Mapping(target = "creator", source = "creator")
     EventDto toDto(Event event);
 
     List<EventDto> toDtoList(List<Event> events);
@@ -35,9 +37,11 @@ public interface EventMapper {
 
     @Named("mapToCategory")
     default Category mapToCategory(String categoryName) {
+        if (categoryName == null) {
+            return null;
+        }
         Category category = new Category();
         category.setName(categoryName);
         return category;
     }
-
 }

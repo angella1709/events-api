@@ -30,8 +30,8 @@ public class User extends BaseEntity {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "owner", cascade = CascadeType.ALL)
-    private Set<Organization> organizations = new HashSet<>();
+    @OneToMany(mappedBy = "creator")
+    private Set<Event> createdEvents = new HashSet<>();
 
     @ManyToMany(mappedBy = "participants")
     private Set<Event> events = new HashSet<>();
@@ -47,23 +47,10 @@ public class User extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "category_id"))
     private Set<Category> subscribedCategories = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(name = "user_organization_subscription",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "organization_id"))
-    private Set<Organization> subscribedOrganizations = new HashSet<>();
-
     public void addRole(Role role) {
         roles.add(role);
     }
 
-    public void addSubscription(Organization organization) {
-        subscribedOrganizations.add(organization);
-    }
-
-    public boolean removeOrganizationSubscription(Long organizationId) {
-        return subscribedOrganizations.removeIf(it -> it.getId().equals(organizationId));
-    }
 
     public void addSubscription(Category category) {
         subscribedCategories.add(category);

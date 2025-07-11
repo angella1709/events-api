@@ -27,6 +27,6 @@ public class EventDto {
 
     private LocationDto location;
 
-    private OrganizationDto organization;
+    private UserDto creator;
 
 }
