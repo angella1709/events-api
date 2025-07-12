@@ -56,7 +56,7 @@ public class UserService {
                 ));
     }
 
-    public Set<String> getEmailsBySubscriptions(Collection<Long> categoriesId, Long organizationId) {
-        return userRepository.getEmailsBySubscriptions(categoriesId, organizationId);
+    public Set<String> getEmailsBySubscriptions(Collection<Long> categoriesId) {
+        return userRepository.getEmailsBySubscriptions(categoriesId);
     }
 }

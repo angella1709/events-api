@@ -19,7 +19,6 @@ public interface EventSpecification {
                 .and(isEquals("name", filterModel.getName()))
                 .and(isEquals("location", "city", filterModel.getCity()))
                 .and(isEquals("location", "street", filterModel.getStreet()))
-                .and(isEquals("organization", "name", filterModel.getOrganizationName()))
                 .and(inCategories(filterModel.getCategoryIds()))
                 .and(isEquals(filterModel.getStartTime(), "startTime"))
                 .and(isEquals(filterModel.getEndTime(), "endTime"));

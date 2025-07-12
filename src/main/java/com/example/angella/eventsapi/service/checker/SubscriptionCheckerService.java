@@ -15,22 +15,16 @@ public class SubscriptionCheckerService extends AbstractAccessCheckerService<Sub
 
     @Override
     protected boolean check(SubscriptionAccessData accessData) {
-        if (accessData.categoryId != null && accessData.organizationId != null) {
-            return subscriptionService.hasOrganizationSubscription(accessData.currentUser, accessData.organizationId)
-                    && subscriptionService.hasCategorySubscription(accessData.currentUser, accessData.categoryId);
-        }
         if (accessData.categoryId == null) {
-            return subscriptionService.hasOrganizationSubscription(accessData.currentUser, accessData.organizationId);
-        } else {
-            return subscriptionService.hasCategorySubscription(accessData.currentUser, accessData.categoryId);
+            return false;
         }
+        return subscriptionService.hasCategorySubscription(accessData.currentUser, accessData.categoryId);
     }
 
     @Override
     protected SubscriptionAccessData getAccessData(HttpServletRequest request) {
         return new SubscriptionAccessData(
                 getFromRequestParams(request, "categoryId", Long::valueOf),
-                getFromRequestParams(request, "organizationId", Long::valueOf),
                 AuthUtils.getAuthenticatedUser().getId()
         );
     }
@@ -42,7 +36,6 @@ public class SubscriptionCheckerService extends AbstractAccessCheckerService<Sub
 
     protected record SubscriptionAccessData(
             Long categoryId,
-            Long organizationId,
             Long currentUser
     ) implements AccessData {
     }

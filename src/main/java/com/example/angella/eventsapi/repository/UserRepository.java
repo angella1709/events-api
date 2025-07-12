@@ -15,15 +15,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT DISTINCT u.email FROM User u " +
             "LEFT JOIN u.subscribedCategories c " +
-            "LEFT JOIN u.subscribedOrganizations o " +
-            "WHERE c.id IN :categoryIds OR o.id = :organizationId")
-    Set<String> getEmailsBySubscriptions(@Param("categoryIds") Collection<Long> categoriesId,
-                                         @Param("organizationId") Long organizationId);
+            "WHERE c.id IN :categoryIds")
+    Set<String> getEmailsBySubscriptions(@Param("categoryIds") Collection<Long> categoriesId);
 
 
     boolean existsByIdAndSubscribedCategoriesId(Long userId, Long categoryId);
-
-    boolean existsByIdAndSubscribedOrganizationsId(Long userId, Long organizationId);
 
     boolean existsByUsernameOrEmail(String username, String email);
 }

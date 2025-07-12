@@ -12,7 +12,7 @@ public class EmailNotificationEvent extends ApplicationEvent {
 
     private final String eventName;
 
-    public EmailNotificationEvent(Object source, Collection<Long> categories, Long organization, String eventName) {
+    public EmailNotificationEvent(Object source, Collection<Long> categories, String eventName) {
         super(source);
         this.categories = categories;
         this.eventName = eventName;

@@ -31,8 +31,6 @@ public class EventFilterModel {
 
     private String street;
 
-    private String organizationName;
-
     private Set<Long> categoryIds;
 
 }
