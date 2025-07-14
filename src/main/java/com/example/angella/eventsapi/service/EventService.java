@@ -1,5 +1,6 @@
 package com.example.angella.eventsapi.service;
 
+import com.example.angella.eventsapi.entity.Category;
 import com.example.angella.eventsapi.entity.Event;
 import com.example.angella.eventsapi.entity.Schedule;
 import com.example.angella.eventsapi.entity.User;
@@ -11,6 +12,7 @@ import com.example.angella.eventsapi.repository.EventRepository;
 import com.example.angella.eventsapi.repository.LocationRepository;
 import com.example.angella.eventsapi.repository.ScheduleRepository;
 import com.example.angella.eventsapi.repository.specification.EventSpecification;
+import com.example.angella.eventsapi.web.dto.UpdateEventRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationEventPublisher;
@@ -21,6 +23,7 @@ import org.springframework.util.CollectionUtils;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -53,6 +56,11 @@ public class EventService {
                 ));
     }
 
+    @Transactional(readOnly = true)
+    public Event getByIdWithRelations(Long id) {
+        return eventRepository.findByIdWithRelations(id)
+                .orElseThrow(() -> new EntityNotFoundException("Event not found"));
+    }
     @Transactional
     public Event create(Event event, Long creatorId) {
         event.setCategories(categoryService.upsertCategories(event.getCategories()));
@@ -75,33 +83,54 @@ public class EventService {
     }
 
     @Transactional
-    public Event update(Long eventId, Event eventForUpdate, Long currentUserId) {
-        Event currentEvent = getById(eventId);
-        if (!currentEvent.getCreator().getId().equals(currentUserId)) {
+    public Event updateEvent(Long eventId, UpdateEventRequest request, Long currentUserId) {
+        Event existingEvent = getByIdWithRelations(eventId);
+
+        // Проверка прав
+        if (!existingEvent.getCreator().getId().equals(currentUserId)) {
             throw new AccessDeniedException("Only event creator can update the event");
         }
-        if (eventForUpdate.getName() != null &&
-                !Objects.equals(eventForUpdate.getName(), currentEvent.getName())) {
-            currentEvent.setName(eventForUpdate.getName());
+
+        // Обновление простых полей
+        if (StringUtils.isNotBlank(request.getName())) {
+            existingEvent.setName(request.getName());
         }
-        if (eventForUpdate.getStartTime() != null &&
-                !Objects.equals(eventForUpdate.getStartTime(), currentEvent.getStartTime())) {
-            currentEvent.setStartTime(eventForUpdate.getStartTime());
+        if (request.getStartTime() != null) {
+            existingEvent.setStartTime(request.getStartTime());
         }
-        if (eventForUpdate.getEndTime() != null &&
-                !Objects.equals(eventForUpdate.getEndTime(), currentEvent.getEndTime())) {
-            currentEvent.setEndTime(eventForUpdate.getEndTime());
+        if (request.getEndTime() != null) {
+            existingEvent.setEndTime(request.getEndTime());
         }
-        Schedule currentSchedule = currentEvent.getSchedule();
-        Schedule updatedSchedule = eventForUpdate.getSchedule();
-        if (updatedSchedule != null && StringUtils.isNoneBlank(updatedSchedule.getDescription()) &&
-                !Objects.equals(currentSchedule.getDescription(), updatedSchedule.getDescription())) {
-            currentSchedule.setDescription(updatedSchedule.getDescription());
+
+        // Обновление расписания
+        if (StringUtils.isNotBlank(request.getSchedule())) {
+            Schedule schedule = existingEvent.getSchedule();
+            if (schedule == null) {
+                schedule = new Schedule();
+                existingEvent.setSchedule(schedule);
+            }
+            schedule.setDescription(request.getSchedule());
+            scheduleRepository.save(schedule);
         }
-        if (!CollectionUtils.isEmpty(eventForUpdate.getCategories())) {
-            currentEvent.setCategories(categoryService.upsertCategories(eventForUpdate.getCategories()));
+
+        // Обновление категорий
+        if (!CollectionUtils.isEmpty(request.getCategories())) {
+            Set<Category> updatedCategories = request.getCategories().stream()
+                    .map(categoryName -> new Category(null, categoryName, null))
+                    .collect(Collectors.toSet());
+            existingEvent.setCategories(categoryService.upsertCategories(updatedCategories));
         }
-        return eventRepository.save(currentEvent);
+
+        Event updatedEvent = eventRepository.save(existingEvent);
+
+        // Отправка уведомлений
+        eventPublisher.publishEvent(new EmailNotificationEvent(
+                this,
+                updatedEvent.getCategories().stream().map(Category::getId).collect(Collectors.toSet()),
+                updatedEvent.getName()
+        ));
+
+        return updatedEvent;
     }
 
     @Transactional

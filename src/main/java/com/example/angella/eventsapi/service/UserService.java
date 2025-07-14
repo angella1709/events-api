@@ -46,6 +46,7 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional(readOnly = true)
     public User findById(Long id) {
         return userRepository.findById(id).orElseThrow(() -> new EntityNotFoundException(
                 MessageFormat.format("User with id {0} not found!", id)
