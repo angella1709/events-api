@@ -24,10 +24,13 @@ public interface EventMapper {
     Event toEntity(CreateEventRequest request);
 
     @Mapping(target = "schedule.description", source = "schedule")
+    @Mapping(target = "location.city", source = "city")
+    @Mapping(target = "location.street", source = "street")
     Event toEntity(UpdateEventRequest request);
 
     @Mapping(target = "categories", source = "categories")
     @Mapping(target = "creator", source = "creator")
+    @Mapping(target = "creator.roles", source = "creator.roles")
     EventDto toDto(Event event);
 
     List<EventDto> toDtoList(List<Event> events);
@@ -44,4 +47,5 @@ public interface EventMapper {
         category.setName(categoryName);
         return category;
     }
+
 }

@@ -26,4 +26,8 @@ public class UpdateEventRequest {
 
     private String schedule;
 
+    private String city;
+
+    private String street;
+
 }

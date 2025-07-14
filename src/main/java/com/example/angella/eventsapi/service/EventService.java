@@ -1,9 +1,6 @@
 package com.example.angella.eventsapi.service;
 
-import com.example.angella.eventsapi.entity.Category;
-import com.example.angella.eventsapi.entity.Event;
-import com.example.angella.eventsapi.entity.Schedule;
-import com.example.angella.eventsapi.entity.User;
+import com.example.angella.eventsapi.entity.*;
 import com.example.angella.eventsapi.event.model.EmailNotificationEvent;
 import com.example.angella.eventsapi.exception.AccessDeniedException;
 import com.example.angella.eventsapi.exception.EntityNotFoundException;
@@ -41,6 +38,7 @@ public class EventService {
         return eventRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Page<Event> filter(EventFilterModel filterModel) {
         return eventRepository.findAll(
                 EventSpecification.withFilter(filterModel),
@@ -72,6 +70,7 @@ public class EventService {
         event.setLocation(location);
         User creator = userService.findById(creatorId);
         event.setCreator(creator);
+        event.addParticipant(creator);
         Event savedEvent = eventRepository.save(event);
 
         eventPublisher.publishEvent(new EmailNotificationEvent(
@@ -119,6 +118,19 @@ public class EventService {
                     .map(categoryName -> new Category(null, categoryName, null))
                     .collect(Collectors.toSet());
             existingEvent.setCategories(categoryService.upsertCategories(updatedCategories));
+        }
+
+        if (StringUtils.isNotBlank(request.getCity()) || StringUtils.isNotBlank(request.getStreet())) {
+            Location location = locationRepository.findByCityAndStreet(
+                    request.getCity() != null ? request.getCity() : existingEvent.getLocation().getCity(),
+                    request.getStreet() != null ? request.getStreet() : existingEvent.getLocation().getStreet()
+            ).orElseGet(() -> {
+                Location newLocation = new Location();
+                newLocation.setCity(request.getCity());
+                newLocation.setStreet(request.getStreet());
+                return locationRepository.save(newLocation);
+            });
+            existingEvent.setLocation(location);
         }
 
         Event updatedEvent = eventRepository.save(existingEvent);

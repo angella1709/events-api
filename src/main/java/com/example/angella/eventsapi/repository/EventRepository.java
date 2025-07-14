@@ -15,7 +15,7 @@ import java.util.Optional;
 
 public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecificationExecutor<Event> {
 
-    @EntityGraph(attributePaths = {"creator", "categories", "schedule", "location"})
+    @EntityGraph(attributePaths = {"creator", "categories", "schedule", "location","creator.roles"})
     @Query("SELECT e FROM Event e WHERE e.id = :id")
     Optional<Event> findByIdWithRelations(@Param("id") Long id);
 

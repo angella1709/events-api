@@ -10,6 +10,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Set;
 
 public interface EventSpecification {
@@ -40,9 +41,10 @@ public interface EventSpecification {
                 return null;
             }
 
-            return criteriaBuilder.equal(
-                    criteriaBuilder.function("date", LocalDate.class, root.get(fieldName)),
-                    date
+            return criteriaBuilder.between(
+                    root.get(fieldName),
+                    date.atStartOfDay(ZoneOffset.UTC),          // Начало дня (00:00:00 UTC)
+                    date.atTime(23, 59, 59).atZone(ZoneOffset.UTC)  // Конец дня (23:59:59 UTC)
             );
         };
     }
