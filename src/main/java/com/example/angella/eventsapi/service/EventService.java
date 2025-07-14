@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class EventService {
     private final EventRepository eventRepository;
     private final CategoryService categoryService;
@@ -44,6 +45,7 @@ public class EventService {
         );
     }
 
+    @Transactional(readOnly = true)
     public Event getById(Long eventId) {
         return eventRepository.findById(eventId).orElseThrow(() ->
                 new EntityNotFoundException(

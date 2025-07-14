@@ -8,6 +8,7 @@ import com.example.angella.eventsapi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.text.MessageFormat;
@@ -16,12 +17,14 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class UserService {
 
     private final UserRepository userRepository;
 
     private final PasswordEncoder passwordEncoder;
 
+    @Transactional
     public User registerUser(User user) {
         if (userRepository.existsByUsernameOrEmail(user.getUsername(), user.getEmail())) {
             throw new RegisterUserException(
@@ -48,7 +51,7 @@ public class UserService {
                 MessageFormat.format("User with id {0} not found!", id)
         ));
     }
-
+    @Transactional(readOnly = true)
     public User findByUsername(String username) {
         return userRepository.findByUsername(username).orElseThrow(() ->
                 new EntityNotFoundException(

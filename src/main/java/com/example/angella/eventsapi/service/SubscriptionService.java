@@ -15,6 +15,7 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class SubscriptionService {
 
     private final CategoryService categoryService;
