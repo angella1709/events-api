@@ -55,6 +55,12 @@ public class Event extends BaseEntity {
     @JoinColumn(name = "creator_id", nullable = false)
     private User creator;
 
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "event", cascade = CascadeType.ALL)
+    private Set<ChatMessage> chatMessages = new HashSet<>();
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "event", cascade = CascadeType.ALL)
+    private Set<Task> tasks = new HashSet<>();
+
     public boolean addParticipant(User participant) {
         return participants.add(participant) && participant.addEvent(this);
     }

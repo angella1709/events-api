@@ -271,3 +271,82 @@ databaseChangeLog:
                     referencedTableName: category
                     referencedColumnNames: id
                     foreignKeyName: fk_evt_cat_cat_id
+  - createTable:
+      tableName: chat_message
+      columns:
+        - column:
+            name: id
+            type: bigserial
+            constraints:
+              primaryKey: true
+        - column:
+            name: created_at
+            type: timestamp with time zone
+        - column:
+            name: updated_at
+            type: timestamp with time zone
+        - column:
+            name: content
+            type: text
+            constraints:
+              nullable: false
+        - column:
+            name: edited
+            type: boolean
+            defaultValue: false
+        - column:
+            name: event_id
+            type: bigint
+            constraints:
+              nullable: false
+              referencedTableName: event
+              referencedColumnNames: id
+              foreignKeyName: fk_chat_message_event_id
+        - column:
+            name: user_id
+            type: bigint
+            constraints:
+              nullable: false
+              referencedTableName: usr
+              referencedColumnNames: id
+              foreignKeyName: fk_chat_message_user_id
+
+  - createTable:
+      tableName: task
+      columns:
+        - column:
+            name: id
+            type: bigserial
+            constraints:
+              primaryKey: true
+        - column:
+            name: created_at
+            type: timestamp with time zone
+        - column:
+            name: updated_at
+            type: timestamp with time zone
+        - column:
+            name: description
+            type: text
+            constraints:
+              nullable: false
+        - column:
+            name: completed
+            type: boolean
+            defaultValue: false
+        - column:
+            name: event_id
+            type: bigint
+            constraints:
+              nullable: false
+              referencedTableName: event
+              referencedColumnNames: id
+              foreignKeyName: fk_task_event_id
+        - column:
+            name: user_id
+            type: bigint
+            constraints:
+              nullable: false
+              referencedTableName: usr
+              referencedColumnNames: id
+              foreignKeyName: fk_task_user_id
