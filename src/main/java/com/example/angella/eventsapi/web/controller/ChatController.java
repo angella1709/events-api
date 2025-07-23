@@ -7,7 +7,9 @@ import com.example.angella.eventsapi.model.PageModel;
 import com.example.angella.eventsapi.service.ChatService;
 import com.example.angella.eventsapi.utils.AuthUtils;
 import com.example.angella.eventsapi.web.dto.ChatMessageDto;
+import com.example.angella.eventsapi.web.dto.CreateChatMessageRequest;
 import com.example.angella.eventsapi.web.dto.PageResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,15 +40,16 @@ public class ChatController {
         ));
     }
 
-    @PostMapping("/{eventId}")
+    @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     @Accessible(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<ChatMessageDto> createMessage(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long eventId,
-            @RequestBody String content) {
+            @RequestParam Long eventId,
+            @Valid @RequestBody CreateChatMessageRequest request) {
+
         var createdMessage = chatService.createMessage(
-                content,
+                request.getContent(),
                 eventId,
                 AuthUtils.getCurrentUserId(userDetails)
         );

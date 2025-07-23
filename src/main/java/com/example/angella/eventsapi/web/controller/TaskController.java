@@ -1,4 +1,3 @@
-// src/main/java/com/example/angella/eventsapi/web/controller/TaskController.java
 package com.example.angella.eventsapi.web.controller;
 
 import com.example.angella.eventsapi.aop.AccessCheckType;
@@ -6,7 +5,9 @@ import com.example.angella.eventsapi.aop.Accessible;
 import com.example.angella.eventsapi.mapper.TaskMapper;
 import com.example.angella.eventsapi.service.TaskService;
 import com.example.angella.eventsapi.utils.AuthUtils;
+import com.example.angella.eventsapi.web.dto.CreateTaskRequest;
 import com.example.angella.eventsapi.web.dto.TaskDto;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/v1/tasks")
+@RequestMapping("/api/v1/task")
 @RequiredArgsConstructor
 public class TaskController {
 
@@ -37,15 +38,16 @@ public class TaskController {
         );
     }
 
-    @PostMapping("/{eventId}")
+    @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     @Accessible(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<TaskDto> createTask(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long eventId,
-            @RequestBody String description) {
+            @RequestParam Long eventId,
+            @Valid @RequestBody CreateTaskRequest request) {
+
         var createdTask = taskService.createTask(
-                description,
+                request.getDescription(),
                 eventId,
                 AuthUtils.getCurrentUserId(userDetails)
         );
