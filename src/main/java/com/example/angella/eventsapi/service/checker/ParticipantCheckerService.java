@@ -20,12 +20,7 @@ public class ParticipantCheckerService extends AbstractAccessCheckerService<Part
 
     @Override
     protected ParticipantAccessData getAccessData(HttpServletRequest request) {
-        var eventId = getFromPathVariable(
-                request,
-                "id",
-                Long::valueOf
-        );
-
+        var eventId = getFromRequestParams(request, "eventId", Long::valueOf);
         return new ParticipantAccessData(eventId, AuthUtils.getAuthenticatedUser().getId());
     }
 

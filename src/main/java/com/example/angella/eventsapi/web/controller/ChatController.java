@@ -9,6 +9,7 @@ import com.example.angella.eventsapi.utils.AuthUtils;
 import com.example.angella.eventsapi.web.dto.ChatMessageDto;
 import com.example.angella.eventsapi.web.dto.CreateChatMessageRequest;
 import com.example.angella.eventsapi.web.dto.PageResponse;
+import com.example.angella.eventsapi.web.dto.UpdateChatMessageRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -62,10 +63,11 @@ public class ChatController {
     public ResponseEntity<ChatMessageDto> updateMessage(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long messageId,
-            @RequestBody String newContent) {
+            @Valid @RequestBody UpdateChatMessageRequest request
+    ) {
         var updatedMessage = chatService.updateMessage(
                 messageId,
-                newContent,
+                request.getContent(),
                 AuthUtils.getCurrentUserId(userDetails)
         );
         return ResponseEntity.ok(chatMessageMapper.toDto(updatedMessage));

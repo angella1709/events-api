@@ -58,12 +58,10 @@ public class ChatService {
 
     public ChatMessage updateMessage(Long messageId, String newContent, Long userId) {
         ChatMessage message = chatMessageRepository.findById(messageId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        MessageFormat.format("Message with id {0} not found!", messageId)
-                ));
+                .orElseThrow(() -> new EntityNotFoundException("Message not found"));
 
         if (!message.getAuthor().getId().equals(userId)) {
-            throw new AccessDeniedException("Only message author can edit the message");
+            throw new AccessDeniedException("Only author can edit the message");
         }
 
         message.setContent(newContent);
