@@ -66,7 +66,10 @@ public class Event extends BaseEntity {
     }
 
     public boolean removeParticipant(User participant) {
-        return participants.removeIf(it -> it.getId().equals(participant.getId()))
-                && participant.removeEvent(this);
+        boolean removed = participants.removeIf(p -> p.getId().equals(participant.getId()));
+        if (removed) {
+            participant.getEvents().removeIf(e -> e.getId().equals(this.getId()));
+        }
+        return removed;
     }
 }

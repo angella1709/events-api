@@ -160,6 +160,11 @@ public class EventService {
     public boolean removeParticipant(Long eventId, Long participantId) {
         Event event = getById(eventId);
         User participant = userService.findById(participantId);
+
+        if (!event.getParticipants().contains(participant)) {
+            return false;
+        }
+
         boolean isRemoved = event.removeParticipant(participant);
         if (isRemoved) {
             eventRepository.save(event);

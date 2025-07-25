@@ -72,19 +72,18 @@ public class EventController {
                 ResponseEntity.badRequest().body("Can't add user to event");
     }
 
-    @DeleteMapping("/{id}/participant")
+    @DeleteMapping("/{eventId}/participant/{participantId}") // Новый путь
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Accessible(checkBy = AccessCheckType.PARTICIPANT)
+    @Accessible(checkBy = AccessCheckType.PARTICIPANT_REMOVAL) // Новая аннотация
     public ResponseEntity<String> removeParticipantFromEvent(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long id) {
+            @PathVariable Long eventId,
+            @PathVariable Long participantId) {
 
-        Long participantId = AuthUtils.getCurrentUserId(userDetails);
-        boolean isRemoved = eventService.removeParticipant(id, participantId);
+        boolean isRemoved = eventService.removeParticipant(eventId, participantId);
 
-        return isRemoved ?
-                ResponseEntity.ok("User was removed from event") :
-                ResponseEntity.badRequest().body("Can't remove user from event");
+        return isRemoved
+                ? ResponseEntity.ok("Участник успешно удалён")
+                : ResponseEntity.badRequest().body("Ошибка удаления");
     }
 
     @DeleteMapping("/{id}")
