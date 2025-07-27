@@ -1,7 +1,6 @@
 package com.example.angella.eventsapi;
 
-import com.example.angella.eventsapi.repository.EventRepository;
-import com.example.angella.eventsapi.repository.UserRepository;
+import com.example.angella.eventsapi.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,10 +32,20 @@ public abstract class ServiceIntegrationTest {
     }
 
     @BeforeEach
-    void clearDatabase(@Autowired UserRepository userRepository,
-                       @Autowired EventRepository eventRepository) {
-        // Очистка таблиц в правильном порядке (с учетом foreign key constraints)
+    void clearDatabase(
+            @Autowired UserRepository userRepository,
+            @Autowired EventRepository eventRepository,
+            @Autowired CategoryRepository categoryRepository,
+            @Autowired ChatMessageRepository chatMessageRepository,
+            @Autowired CommentRepository commentRepository,
+            @Autowired TaskRepository taskRepository
+    ) {
+        // Очистка в правильном порядке (сначала дочерние сущности)
+        taskRepository.deleteAll();
+        chatMessageRepository.deleteAll();
+        commentRepository.deleteAll();
         eventRepository.deleteAll();
+        categoryRepository.deleteAll();
         userRepository.deleteAll();
     }
 }

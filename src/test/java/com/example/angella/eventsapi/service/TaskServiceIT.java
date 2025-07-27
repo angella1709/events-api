@@ -1,20 +1,21 @@
 package com.example.angella.eventsapi.service;
 
 import com.example.angella.eventsapi.ServiceIntegrationTest;
-import com.example.angella.eventsapi.entity.Event;
-import com.example.angella.eventsapi.entity.Task;
-import com.example.angella.eventsapi.entity.User;
+import com.example.angella.eventsapi.entity.*;
 import com.example.angella.eventsapi.exception.AccessDeniedException;
-import com.example.angella.eventsapi.exception.EntityNotFoundException;
+import com.example.angella.eventsapi.repository.LocationRepository;
+import com.example.angella.eventsapi.repository.ScheduleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Transactional
 class TaskServiceIT extends ServiceIntegrationTest {
 
     @Autowired
@@ -23,27 +24,51 @@ class TaskServiceIT extends ServiceIntegrationTest {
     private EventService eventService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private LocationRepository locationRepository;
+    @Autowired
+    private ScheduleRepository scheduleRepository;
+    @Autowired
+    private CategoryService categoryService;
 
     private User testUser;
     private Event testEvent;
 
     @BeforeEach
     void setUp() {
-        // Создание пользователя (это работает)
+        // Create test user
         testUser = new User();
-        testUser.setUsername("chattester");
-        testUser.setEmail("chat@example.com");
+        testUser.setUsername("taskuser");
+        testUser.setEmail("task@example.com");
         testUser.setPassword("password");
         testUser = userService.registerUser(testUser);
 
-        // Создание события - нужно добавить все обязательные поля!
-        testEvent = new Event();
-        testEvent.setName("Chat Event");
-        testEvent.setStartTime(LocalDateTime.now().plusDays(1)); // дата начала
-        testEvent.setEndTime(LocalDateTime.now().plusDays(2));   // дата окончания
-        // Возможно нужны еще поля: location, schedule и т.д.
-
+        // Create complete Event with all required fields
+        testEvent = buildTestEvent();
         testEvent = eventService.create(testEvent, testUser.getId());
+    }
+
+    private Event buildTestEvent() {
+        Event event = new Event();
+        event.setName("Test Event");
+        event.setStartTime(Instant.now());
+        event.setEndTime(Instant.now().plus(1, ChronoUnit.HOURS));
+
+        // Set location
+        Location location = new Location();
+        location.setCity("Test City");
+        location.setStreet("Test Street");
+        location = locationRepository.save(location);
+        event.setLocation(location);
+
+        // Set schedule
+        Schedule schedule = new Schedule();
+        schedule.setDescription("Test Schedule");
+        schedule = scheduleRepository.save(schedule);
+        event.setSchedule(schedule);
+
+        event.setCreator(testUser);
+        return event;
     }
 
     @Test
@@ -53,16 +78,19 @@ class TaskServiceIT extends ServiceIntegrationTest {
         assertNotNull(task.getId());
         assertEquals("Test task", task.getDescription());
         assertFalse(task.isCompleted());
+        assertEquals(testUser.getId(), task.getCreator().getId());
     }
 
     @Test
     void createTask_ShouldThrowWhenNotParticipant() {
-        User nonParticipant = createTestUser();
+        User nonParticipant = new User();
+        nonParticipant.setUsername("nonparticipant");
+        nonParticipant.setEmail("non@example.com");
+        nonParticipant.setPassword("password");
+        User registeredNonParticipant = userService.registerUser(nonParticipant);
 
         assertThrows(AccessDeniedException.class, () -> {
-            Long eventId = testEvent.getId();
-            Long userId = nonParticipant.getId();
-            taskService.createTask("Test", eventId, userId);
+            taskService.createTask("Test", testEvent.getId(), registeredNonParticipant.getId());
         });
     }
 
@@ -71,26 +99,45 @@ class TaskServiceIT extends ServiceIntegrationTest {
         taskService.createTask("Task 1", testEvent.getId(), testUser.getId());
         taskService.createTask("Task 2", testEvent.getId(), testUser.getId());
 
-        List<Task> tasks = taskService.getTasksForEvent(testEvent.getId());
-
+        var tasks = taskService.getTasksForEvent(testEvent.getId());
         assertEquals(2, tasks.size());
     }
 
     @Test
     void updateTask_ShouldUpdateFields() {
         Task task = taskService.createTask("Original", testEvent.getId(), testUser.getId());
-
-        Task updated = taskService.updateTask(task.getId(), "Updated", true, testUser.getId());
+        Task updated = taskService.updateTask(
+                task.getId(),
+                "Updated",
+                true,
+                testUser.getId()
+        );
 
         assertEquals("Updated", updated.getDescription());
         assertTrue(updated.isCompleted());
     }
 
-    private User createTestUser() {
-        User user = new User();
-        user.setUsername("nonparticipant");
-        user.setEmail("non@example.com");
-        user.setPassword("password");
-        return userService.registerUser(user);
+    @Test
+    void updateTask_ShouldThrowWhenNotCreator() {
+        Task task = taskService.createTask("Test", testEvent.getId(), testUser.getId());
+
+        User otherUser = new User();
+        otherUser.setUsername("other");
+        otherUser.setEmail("other@test.com");
+        otherUser.setPassword("pass");
+        User registeredOtherUser = userService.registerUser(otherUser);
+
+        assertThrows(AccessDeniedException.class, () -> {
+            taskService.updateTask(task.getId(), "Hacked", false, registeredOtherUser.getId());
+        });
+    }
+
+    @Test
+    void deleteTask_ShouldRemoveTask() {
+        Task task = taskService.createTask("To delete", testEvent.getId(), testUser.getId());
+        taskService.deleteTask(task.getId(), testUser.getId());
+
+        var tasks = taskService.getTasksForEvent(testEvent.getId());
+        assertFalse(tasks.stream().anyMatch(t -> t.getId().equals(task.getId())));
     }
 }
