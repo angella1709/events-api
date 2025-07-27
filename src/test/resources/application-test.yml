@@ -3,7 +3,15 @@ spring:
     url: jdbc:tc:postgresql:16.1:///testdb
     username: testuser
     password: testpass
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    hikari:
+      maximum-pool-size: 2 # Для тестов достаточно маленького пула
   jpa:
-    hibernate.ddl-auto: none
+    hibernate:
+      ddl-auto: none # Мы используем Liquibase
     show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  liquibase:
+    enabled: true
+    change-log: classpath:db/master.xml

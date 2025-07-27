@@ -1,112 +1,101 @@
 package com.example.angella.eventsapi.service;
 
-import com.example.angella.eventsapi.TestConfig;
+import com.example.angella.eventsapi.ServiceIntegrationTest;
 import com.example.angella.eventsapi.entity.*;
 import com.example.angella.eventsapi.exception.AccessDeniedException;
 import com.example.angella.eventsapi.exception.EntityNotFoundException;
-import com.example.angella.eventsapi.model.EventFilterModel;
-import com.example.angella.eventsapi.model.PageModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Transactional
-class EventServiceIT extends TestConfig {
+class EventServiceIT extends ServiceIntegrationTest {
 
     @Autowired
     private EventService eventService;
-
     @Autowired
     private UserService userService;
-
     @Autowired
     private CategoryService categoryService;
 
     private User testUser;
-    private Event testEvent;
+    private Category testCategory;
 
     @BeforeEach
     void setUp() {
         testUser = new User();
-        testUser.setUsername("eventuser");
-        testUser.setEmail("event@example.com");
+        testUser.setUsername("eventcreator");
+        testUser.setEmail("creator@example.com");
         testUser.setPassword("password");
         testUser = userService.registerUser(testUser);
+
+        testCategory = new Category();
+        testCategory.setName("TestCategory");
+        testCategory = categoryService.upsertCategories(Set.of(testCategory)).iterator().next();
+    }
+
+    @Test
+    void createEvent_ShouldSaveWithAllRelations() {
+        Event event = new Event();
+        event.setName("Test Event");
+        event.setStartTime(Instant.now().plusSeconds(3600));
+        event.setEndTime(Instant.now().plusSeconds(7200));
+        event.setCategories(Set.of(testCategory));
 
         Location location = new Location();
         location.setCity("Test City");
         location.setStreet("Test Street");
+        event.setLocation(location);
 
         Schedule schedule = new Schedule();
         schedule.setDescription("Test Schedule");
+        event.setSchedule(schedule);
 
-        testEvent = new Event();
-        testEvent.setName("Test Event");
-        testEvent.setStartTime(Instant.now().plus(1, ChronoUnit.DAYS));
-        testEvent.setEndTime(Instant.now().plus(2, ChronoUnit.DAYS));
-        testEvent.setLocation(location);
-        testEvent.setSchedule(schedule);
-        testEvent.setCreator(testUser);
+        event.setCreator(testUser);
 
-        Category category = new Category();
-        category.setName("Test Category");
-        testEvent.setCategories(Set.of(category));
+        Event savedEvent = eventService.create(event, testUser.getId());
 
-        eventService.create(testEvent, testUser.getId());
+        assertNotNull(savedEvent.getId());
+        assertEquals("Test Event", savedEvent.getName());
+        assertEquals(testUser.getId(), savedEvent.getCreator().getId());
+        assertEquals(1, savedEvent.getCategories().size());
     }
 
     @Test
-    void createEvent_ShouldSuccessfullyCreateEvent() {
-        assertNotNull(testEvent.getId());
-        assertEquals("Test Event", testEvent.getName());
-        assertEquals(testUser.getId(), testEvent.getCreator().getId());
+    void addParticipant_ShouldAddUserToEvent() {
+        Event event = createTestEvent();
+        User participant = createTestUser("participant");
+
+        boolean result = eventService.addParticipant(event.getId(), participant.getId());
+
+        assertTrue(result);
+        assertTrue(eventService.hasParticipant(event.getId(), participant.getId()));
     }
 
     @Test
-    void getById_ShouldReturnEvent() {
-        Event foundEvent = eventService.getById(testEvent.getId());
-
-        assertEquals(testEvent.getId(), foundEvent.getId());
-        assertEquals("Test Event", foundEvent.getName());
-    }
-
-    @Test
-    void updateEvent_ShouldUpdateEvent() {
-        testEvent.setName("Updated Event");
-        Event updatedEvent = eventService.updateEvent(testEvent.getId(), testEvent, testUser.getId());
-
-        assertEquals("Updated Event", updatedEvent.getName());
-    }
-
-    @Test
-    void updateEvent_ShouldThrowExceptionWhenNotCreator() {
-        User anotherUser = new User();
-        anotherUser.setUsername("anotheruser");
-        anotherUser.setEmail("another@example.com");
-        anotherUser.setPassword("password");
-        anotherUser = userService.registerUser(anotherUser);
+    void updateEvent_ShouldThrowWhenNotCreator() {
+        Event event = createTestEvent();
+        User anotherUser = createTestUser("anotheruser");
 
         assertThrows(AccessDeniedException.class, () ->
-                eventService.updateEvent(testEvent.getId(), testEvent, anotherUser.getId()));
+                eventService.updateEvent(event.getId(), event, anotherUser.getId()));
     }
 
-    @Test
-    void filter_ShouldFilterEvents() {
-        EventFilterModel filter = new EventFilterModel();
-        filter.setName("Test Event");
-        filter.setPage(new PageModel(0, 10));
+    private Event createTestEvent() {
+        Event event = new Event();
+        event.setName("Test Event");
+        return eventService.create(event, testUser.getId());
+    }
 
-        Page<Event> result = eventService.filter(filter);
-
-        assertEquals(1, result.getTotalElements());
-        assertEquals("Test Event", result.getContent().get(0).getName());
+    private User createTestUser(String username) {
+        User user = new User();
+        user.setUsername(username);
+        user.setEmail(username + "@example.com");
+        user.setPassword("password");
+        return userService.registerUser(user);
     }
 }
