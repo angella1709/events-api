@@ -4,7 +4,11 @@ spring:
     username: testuser
     password: testpass
     hikari:
-      maximum-pool-size: 2 # Для тестов достаточно маленького пула
+      connection-timeout: 30000
+      maximum-pool-size: 5
+      minimum-idle: 1
+      max-lifetime: 1800000
+      idle-timeout: 30000
   jpa:
     hibernate:
       ddl-auto: none # Мы используем Liquibase

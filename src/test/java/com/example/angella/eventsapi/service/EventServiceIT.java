@@ -3,7 +3,7 @@ package com.example.angella.eventsapi.service;
 import com.example.angella.eventsapi.ServiceIntegrationTest;
 import com.example.angella.eventsapi.entity.*;
 import com.example.angella.eventsapi.exception.AccessDeniedException;
-import com.example.angella.eventsapi.exception.EntityNotFoundException;
+import com.example.angella.eventsapi.web.dto.UpdateEventRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,23 +40,7 @@ class EventServiceIT extends ServiceIntegrationTest {
 
     @Test
     void createEvent_ShouldSaveWithAllRelations() {
-        Event event = new Event();
-        event.setName("Test Event");
-        event.setStartTime(Instant.now().plusSeconds(3600));
-        event.setEndTime(Instant.now().plusSeconds(7200));
-        event.setCategories(Set.of(testCategory));
-
-        Location location = new Location();
-        location.setCity("Test City");
-        location.setStreet("Test Street");
-        event.setLocation(location);
-
-        Schedule schedule = new Schedule();
-        schedule.setDescription("Test Schedule");
-        event.setSchedule(schedule);
-
-        event.setCreator(testUser);
-
+        Event event = buildTestEvent();
         Event savedEvent = eventService.create(event, testUser.getId());
 
         assertNotNull(savedEvent.getId());
@@ -81,14 +65,36 @@ class EventServiceIT extends ServiceIntegrationTest {
         Event event = createTestEvent();
         User anotherUser = createTestUser("anotheruser");
 
+        UpdateEventRequest updateRequest = new UpdateEventRequest();
+        updateRequest.setName("Updated Name");
+
         assertThrows(AccessDeniedException.class, () ->
-                eventService.updateEvent(event.getId(), event, anotherUser.getId()));
+                eventService.updateEvent(event.getId(), updateRequest, anotherUser.getId()));
     }
 
     private Event createTestEvent() {
+        Event event = buildTestEvent();
+        return eventService.create(event, testUser.getId());
+    }
+
+    private Event buildTestEvent() {
         Event event = new Event();
         event.setName("Test Event");
-        return eventService.create(event, testUser.getId());
+        event.setStartTime(Instant.now().plusSeconds(3600));
+        event.setEndTime(Instant.now().plusSeconds(7200));
+        event.setCategories(Set.of(testCategory));
+
+        Location location = new Location();
+        location.setCity("Test City");
+        location.setStreet("Test Street");
+        event.setLocation(location);
+
+        Schedule schedule = new Schedule();
+        schedule.setDescription("Test Schedule");
+        event.setSchedule(schedule);
+
+        event.setCreator(testUser);
+        return event;
     }
 
     private User createTestUser(String username) {
