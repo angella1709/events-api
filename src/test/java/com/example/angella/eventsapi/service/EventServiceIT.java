@@ -27,6 +27,7 @@ class EventServiceIT extends ServiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Инициализация тестового пользователя и категории перед каждым тестом
         testUser = new User();
         testUser.setUsername("eventcreator");
         testUser.setEmail("creator@example.com");
@@ -40,43 +41,63 @@ class EventServiceIT extends ServiceIntegrationTest {
 
     @Test
     void createEvent_ShouldSaveWithAllRelations() {
+        // Создание тестового события
         Event event = buildTestEvent();
+        // Вызов метода создания события
         Event savedEvent = eventService.create(event, testUser.getId());
 
+        // Проверки:
+        // - что событие было сохранено (имеет ID)
         assertNotNull(savedEvent.getId());
+        // - что название события корректно
         assertEquals("Test Event", savedEvent.getName());
+        // - что создатель события соответствует тестовому пользователю
         assertEquals(testUser.getId(), savedEvent.getCreator().getId());
+        // - что событие имеет одну категорию
         assertEquals(1, savedEvent.getCategories().size());
     }
 
     @Test
     void addParticipant_ShouldAddUserToEvent() {
+        // Создание тестового события
         Event event = createTestEvent();
+        // Создание пользователя-участника
         User participant = createTestUser("participant");
 
+        // Добавление участника к событию
         boolean result = eventService.addParticipant(event.getId(), participant.getId());
 
+        // Проверки:
+        // - что метод добавления вернул true (успех)
         assertTrue(result);
+        // - что событие теперь содержит этого участника
         assertTrue(eventService.hasParticipant(event.getId(), participant.getId()));
     }
 
     @Test
     void updateEvent_ShouldThrowWhenNotCreator() {
+        // Создание тестового события
         Event event = createTestEvent();
+        // Создание другого пользователя (не создателя события)
         User anotherUser = createTestUser("anotheruser");
 
+        // Подготовка запроса на обновление
         UpdateEventRequest updateRequest = new UpdateEventRequest();
         updateRequest.setName("Updated Name");
 
+        // Проверка, что при попытке обновления не создателем
+        // будет выброшено исключение AccessDeniedException
         assertThrows(AccessDeniedException.class, () ->
                 eventService.updateEvent(event.getId(), updateRequest, anotherUser.getId()));
     }
 
+    // Вспомогательный метод для создания тестового события (уже сохраненного в БД)
     private Event createTestEvent() {
         Event event = buildTestEvent();
         return eventService.create(event, testUser.getId());
     }
 
+    // Вспомогательный метод для построения объекта события (без сохранения в БД)
     private Event buildTestEvent() {
         Event event = new Event();
         event.setName("Test Event");
@@ -97,6 +118,7 @@ class EventServiceIT extends ServiceIntegrationTest {
         return event;
     }
 
+    // Вспомогательный метод для создания тестового пользователя
     private User createTestUser(String username) {
         User user = new User();
         user.setUsername(username);
