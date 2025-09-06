@@ -1,7 +1,6 @@
 package com.example.angella.eventsapi.service;
 
 import com.example.angella.eventsapi.entity.*;
-import com.example.angella.eventsapi.event.model.EmailNotificationEvent;
 import com.example.angella.eventsapi.exception.AccessDeniedException;
 import com.example.angella.eventsapi.exception.EntityNotFoundException;
 import com.example.angella.eventsapi.model.EventFilterModel;
@@ -73,11 +72,6 @@ public class EventService {
         event.addParticipant(creator);
         Event savedEvent = eventRepository.save(event);
 
-        eventPublisher.publishEvent(new EmailNotificationEvent(
-                this,
-                event.getCategories().stream().map(c -> c.getId()).collect(Collectors.toSet()),
-                event.getName()
-        ));
         return savedEvent;
     }
 
@@ -134,13 +128,6 @@ public class EventService {
         }
 
         Event updatedEvent = eventRepository.save(existingEvent);
-
-        // Отправка уведомлений
-        eventPublisher.publishEvent(new EmailNotificationEvent(
-                this,
-                updatedEvent.getCategories().stream().map(Category::getId).collect(Collectors.toSet()),
-                updatedEvent.getName()
-        ));
 
         return updatedEvent;
     }
