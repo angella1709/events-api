@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      layout:decorate="~{layout/base}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <title>Мероприятия - Events Platform</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <!-- Filters Section -->
+    <div class="container-fluid bg-light py-3">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="h3 mb-0">Все мероприятия</h1>
+                    <p class="text-muted mb-0" th:text="'Найдено ' + ${events.size()} + ' мероприятий'"></p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a th:href="@{/event/create}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Создать событие
+                    </a>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" id="searchInput"
+                           placeholder="Поиск мероприятий..." th:value="${searchTerm}">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="categoryFilter">
+                        <option value="">Все категории</option>
+                        <option th:each="category : ${categories}"
+                                th:value="${category.id}"
+                                th:text="${category.name}"
+                                th:selected="${selectedCategory == category.id}">
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="sortFilter">
+                        <option value="newest">Сначала новые</option>
+                        <option value="oldest">Сначала старые</option>
+                        <option value="popular">По популярности</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-primary w-100" id="applyFilters">
+                        <i class="fas fa-filter me-2"></i>Применить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div class="container py-4">
+        <div class="row" id="eventsContainer">
+            <div th:each="event : ${events}" class="col-lg-4 col-md-6 mb-4">
+                <div class="card event-card h-100">
+                    <div class="card-header bg-transparent">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-primary" th:text="${event.categories[0]?.name}">Категория</span>
+                            <small class="text-muted" th:text="${#temporals.format(event.startTime, 'dd.MM.yyyy')}">
+                                01.01.2024
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${event.name}">Название события</h5>
+                        <p class="card-text text-muted" th:text="${event.schedule?.description}">
+                            Описание мероприятия...
+                        </p>
+
+                        <div class="event-details mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-map-marker-alt text-muted me-2"></i>
+                                <small th:text="${event.location.city + ', ' + event.location.street}">
+                                    Город, Улица
+                                </small>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-clock text-muted me-2"></i>
+                                <small th:text="${#temporals.format(event.startTime, 'HH:mm') + ' - ' + #temporals.format(event.endTime, 'HH:mm')}">
+                                    12:00 - 18:00
+                                </small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-users text-muted me-2"></i>
+                                <small th:text="${event.participants.size() + ' участников'}">
+                                    0 участников
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a th:href="@{/event/{id}(id=${event.id})}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>Подробнее
+                            </a>
+                            <span class="text-muted" th:if="${event.creator}"
+                                  th:text="'от ' + ${event.creator.username}">
+                                    от организатора
+                                </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div th:if="${#lists.isEmpty(events)}" class="text-center py-5">
+            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">Мероприятия не найдены</h4>
+            <p class="text-muted">Попробуйте изменить параметры поиска или создайте первое мероприятие!</p>
+            <a th:href="@{/event/create}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Создать мероприятие
+            </a>
+        </div>
+
+        <!-- Load More Button -->
+        <div th:if="${not #lists.isEmpty(events) and events.size() >= 9}" class="text-center mt-4">
+            <button id="loadMoreBtn" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-down me-2"></i>Показать еще
+            </button>
+        </div>
+    </div>
+</div>
+
+<div layout:fragment="scripts">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Search functionality
+            $('#searchInput').on('keypress', function(e) {
+                if (e.which === 13) { // Enter key
+                    applyFilters();
+                }
+            });
+
+            $('#applyFilters').on('click', applyFilters);
+
+            function applyFilters() {
+                const search = $('#searchInput').val();
+                const category = $('#categoryFilter').val();
+                const sort = $('#sortFilter').val();
+
+                let url = '/events?';
+                if (search) url += `search=${encodeURIComponent(search)}&`;
+                if (category) url += `categoryId=${category}&`;
+                if (sort) url += `sort=${sort}`;
+
+                window.location.href = url;
+            }
+
+            // Load more functionality
+            let currentPage = 1;
+            $('#loadMoreBtn').on('click', function() {
+                const button = $(this);
+                const originalText = button.html();
+                button.html('<span class="spinner-border spinner-border-sm"></span> Загрузка...');
+                button.prop('disabled', true);
+
+                currentPage++;
+
+                // Simulate API call
+                setTimeout(() => {
+                    // In real implementation, fetch next page from API
+                    const newEvents = [
+                        {
+                            id: 10,
+                            name: 'Дополнительное мероприятие ' + currentPage,
+                            categories: [{name: 'Дополнительное'}],
+                            startTime: new Date(),
+                            endTime: new Date(),
+                            location: {city: 'Город', street: 'Улица'},
+                            participants: [],
+                            schedule: {description: 'Описание дополнительного мероприятия'},
+                            creator: {username: 'Организатор'}
+                        }
+                    ];
+
+                    // Append new events
+                    newEvents.forEach(event => {
+                        const eventHtml = `
+                                <div class="col-lg-4 col-md-6 mb-4">
+                                    <div class="card event-card h-100">
+                                        <div class="card-header bg-transparent">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge bg-primary">${event.categories[0].name}</span>
+                                                <small class="text-muted">${new Date(event.startTime).toLocaleDateString('ru-RU')}</small>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <h5 class="card-title">${event.name}</h5>
+                                            <p class="card-text text-muted">${event.schedule.description}</p>
+                                            <div class="event-details mb-3">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <i class="fas fa-map-marker-alt text-muted me-2"></i>
+                                                    <small>${event.location.city}, ${event.location.street}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-footer bg-transparent">
+                                            <a href="/event/${event.id}" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-eye me-1"></i>Подробнее
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        $('#eventsContainer').append(eventHtml);
+                    });
+
+                    button.html(originalText);
+                    button.prop('disabled', false);
+                }, 1000);
+            });
+        });
+    </script>
+</div>
+</body>
+</html>

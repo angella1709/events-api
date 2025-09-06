@@ -39,19 +39,60 @@ public class SecurityConfiguration {
         return authManagerBuilder.build();
     }
 
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
         http
                 .authorizeHttpRequests((auth) ->
                         auth
+                                // Public pages
+                                .requestMatchers("/", "/home", "/events", "/event/**",
+                                        "/categories", "/about", "/contact",
+                                        "/login", "/register", "/error/**").permitAll()
+
+                                // Static resources
+                                .requestMatchers("/css/**", "/js/**", "/images/**",
+                                        "/webjars/**", "/favicon.ico").permitAll()
+
+                                // API endpoints
                                 .requestMatchers("/api/v1/public/**").permitAll()
+
+                                // Authenticated pages
+                                .requestMatchers("/profile", "/event/create", "/event/edit/**").authenticated()
+
+                                // Admin pages
+                                .requestMatchers("/admin/**").hasRole("ADMIN")
+
                                 .anyRequest().authenticated()
                 )
-                .csrf(AbstractHttpConfigurer::disable)
-                .httpBasic(Customizer.withDefaults())
-                .sessionManagement(httpSecuritySessionManagementConfigurer ->
-                        httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/")
+                        .failureUrl("/login?error=true")
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout=true")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .permitAll()
+                )
+                .rememberMe(remember -> remember
+                        .key("uniqueAndSecret")
+                        .tokenValiditySeconds(86400) // 24 hours
+                )
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .maximumSessions(1)
+                        .maxSessionsPreventsLogin(false)
+                )
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/**") // Disable CSRF for API
+                )
+                .exceptionHandling(exceptions -> exceptions
+                        .accessDeniedPage("/error/403")
+                )
                 .authenticationManager(authenticationManager);
 
         return http.build();

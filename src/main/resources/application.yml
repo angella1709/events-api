@@ -18,3 +18,16 @@ spring:
   jpa:
     generate-ddl: false
     open-in-view: false
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false # Set to true in production
+    servlet:
+      content-type: text/html
+  mvc:
+    static-path-pattern: /**
+  web:
+    resources:
+      static-locations: classpath:/static/,classpath:/public/
