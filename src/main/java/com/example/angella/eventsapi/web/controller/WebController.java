@@ -159,4 +159,20 @@ public class WebController {
     public String contact() {
         return "contact";
     }
+
+    @GetMapping("/event/create")
+    public String createEventForm(Model model, Authentication authentication) {
+        try {
+            if (authentication == null) {
+                return "redirect:/login";
+            }
+
+            model.addAttribute("categories", categoryService.findAll());
+            return "events/create";
+        } catch (Exception e) {
+            log.error("Error loading event creation form", e);
+            model.addAttribute("error", "Не удалось загрузить форму создания мероприятия");
+            return "events/create";
+        }
+    }
 }
