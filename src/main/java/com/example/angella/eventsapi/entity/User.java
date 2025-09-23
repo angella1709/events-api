@@ -36,6 +36,10 @@ public class User extends BaseEntity {
     @ManyToMany(mappedBy = "participants")
     private Set<Event> events = new HashSet<>();
 
+    @OneToOne
+    @JoinColumn(name = "avatar_image_id")
+    private Image avatar;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)

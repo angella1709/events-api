@@ -23,7 +23,7 @@
                             <span th:text="${error}">Ошибка при создании мероприятия</span>
                         </div>
 
-                        <form id="createEventForm" class="needs-validation" novalidate>
+                        <form id="createEventForm" th:action="@{/event/create}" method="post" class="needs-validation" novalidate>
                             <!-- Поля формы остаются без изменений -->
                             <div class="mb-3">
                                 <label for="name" class="form-label">Название мероприятия *</label>

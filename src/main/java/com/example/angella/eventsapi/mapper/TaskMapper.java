@@ -13,5 +13,6 @@ import org.mapstruct.ReportingPolicy;
 )
 public interface TaskMapper {
     @Mapping(target = "creator", source = "creator.username")
+    @Mapping(target = "assignedUser", source = "assignedUser.username") // ДОБАВИТЬ
     TaskDto toDto(Task task);
 }

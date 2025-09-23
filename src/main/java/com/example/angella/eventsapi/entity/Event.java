@@ -61,6 +61,9 @@ public class Event extends BaseEntity {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "event", cascade = CascadeType.ALL)
     private Set<Task> tasks = new HashSet<>();
 
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "event", cascade = CascadeType.ALL)
+    private Set<Image> images;
+
     public boolean addParticipant(User participant) {
         return participants.add(participant) && participant.addEvent(this);
     }

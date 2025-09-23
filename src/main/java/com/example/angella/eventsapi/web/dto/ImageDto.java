@@ -9,11 +9,12 @@ import java.time.Instant;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TaskDto {
+public class ImageDto {
     private Long id;
-    private String description;
-    private boolean completed;
-    private String creator;
-    private String assignedUser;
+    private String filename;
+    private String originalFilename;
+    private String contentType;
+    private Long size;
+    private String url;
     private Instant createdAt;
 }

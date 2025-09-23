@@ -27,3 +27,132 @@ databaseChangeLog:
               - column:
                   name: name
                   value: Музыка
+
+  # Шаблоны чеклистов
+  - changeSet:
+      id: insert-checklist-templates
+      author: angella
+      changes:
+        - insert:
+            tableName: checklist_template
+            columns:
+              - column:
+                  name: id
+                  value: 1
+              - column:
+                  name: created_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: name
+                  value: "Пикник на природе"
+              - column:
+                  name: description
+                  value: "Стандартный набор для пикника"
+              - column:
+                  name: category
+                  value: "PICNIC"
+
+        - insert:
+            tableName: checklist_template
+            columns:
+              - column:
+                  name: id
+                  value: 2
+              - column:
+                  name: created_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: name
+                  value: "Поход в горы"
+              - column:
+                  name: description
+                  value: "Экипировка для горного похода"
+              - column:
+                  name: category
+                  value: "HIKING"
+
+  # Элементы шаблонов
+  - changeSet:
+      id: insert-template-items-picnic
+      author: angella
+      changes:
+        - insert:
+            tableName: template_item
+            columns:
+              - column:
+                  name: id
+                  value: 1
+              - column:
+                  name: created_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: name
+                  value: "Плед"
+              - column:
+                  name: description
+                  value: "Большой плед для сидения на траве"
+              - column:
+                  name: default_quantity
+                  value: 1
+              - column:
+                  name: template_id
+                  value: 1
+
+        - insert:
+            tableName: template_item
+            columns:
+              - column:
+                  name: id
+                  value: 2
+              - column:
+                  name: created_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: name
+                  value: "Корзина для пикника"
+              - column:
+                  name: description
+                  value: "Плетеная корзина для еды и посуды"
+              - column:
+                  name: default_quantity
+                  value: 1
+              - column:
+                  name: template_id
+                  value: 1
+
+        - insert:
+            tableName: template_item
+            columns:
+              - column:
+                  name: id
+                  value: 3
+              - column:
+                  name: created_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  valueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: name
+                  value: "Одноразовая посуда"
+              - column:
+                  name: description
+                  value: "Тарелки, стаканы, приборы"
+              - column:
+                  name: default_quantity
+                  value: 10
+              - column:
+                  name: template_id
+                  value: 1

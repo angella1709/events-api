@@ -4,16 +4,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TaskDto {
+public class ChecklistTemplateDto {
     private Long id;
+    private String name;
     private String description;
-    private boolean completed;
-    private String creator;
-    private String assignedUser;
-    private Instant createdAt;
+    private String category;
+    private List<TemplateItemDto> items;
 }

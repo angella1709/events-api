@@ -11,22 +11,28 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Task extends BaseEntity {
+public class ChecklistItem extends BaseEntity {
 
     @Column(nullable = false)
+    private String name;
+
     private String description;
 
-    private boolean completed;
+    private Integer quantity = 1;
+
+    private boolean completed = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User creator;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_user_id")
-    private User assignedUser;
+    private User assignedUser; // Кому назначена вещь (необязательно) УБРАТЬ
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id", nullable = false)
+    private User createdBy;
+
+    private Boolean fromTemplate = false; // Создано из шаблона
 }

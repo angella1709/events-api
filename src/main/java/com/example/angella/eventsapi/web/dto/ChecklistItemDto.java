@@ -9,11 +9,14 @@ import java.time.Instant;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TaskDto {
+public class ChecklistItemDto {
     private Long id;
+    private String name;
     private String description;
+    private Integer quantity;
     private boolean completed;
-    private String creator;
-    private String assignedUser;
     private Instant createdAt;
+    private String createdBy;
+    private String assignedUser;
+    private Boolean fromTemplate;
 }

@@ -1,16 +1,18 @@
 package com.example.angella.eventsapi.web.controller;
 
+import com.example.angella.eventsapi.entity.Event;
+import com.example.angella.eventsapi.entity.User;
+import com.example.angella.eventsapi.mapper.EventMapper;
 import com.example.angella.eventsapi.service.CategoryService;
 import com.example.angella.eventsapi.service.EventService;
 import com.example.angella.eventsapi.service.UserService;
+import com.example.angella.eventsapi.web.dto.CreateEventRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +25,7 @@ public class WebController {
     private final EventService eventService;
     private final CategoryService categoryService;
     private final UserService userService;
+    private final EventMapper eventMapper;
 
     @GetMapping("/")
     public String home(Model model, Authentication authentication) {
@@ -154,18 +157,26 @@ public class WebController {
         return "contact";
     }
 
-    @GetMapping("/event/create")
-    public String createEventForm(Model model, Authentication authentication) {
+    @PostMapping("/event/create")
+    public String createEvent(@ModelAttribute CreateEventRequest request,
+                              Authentication authentication,
+                              Model model) {
         try {
             if (authentication == null) {
                 return "redirect:/login";
             }
 
-            model.addAttribute("categories", categoryService.findAll());
-            return "events/create";
+            User user = userService.findByUsername(authentication.getName());
+            request.setCreatorId(user.getId());
+
+            Event event = eventMapper.toEntity(request);
+            eventService.create(event, user.getId());
+
+            return "redirect:/events?created=true";
         } catch (Exception e) {
-            log.error("Error loading event creation form", e);
-            model.addAttribute("error", "Не удалось загрузить форму создания мероприятия");
+            log.error("Error creating event", e);
+            model.addAttribute("error", "Ошибка при создании мероприятия: " + e.getMessage());
+            model.addAttribute("categories", categoryService.findAll());
             return "events/create";
         }
     }

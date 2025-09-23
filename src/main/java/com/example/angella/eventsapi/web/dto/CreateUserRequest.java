@@ -26,6 +26,9 @@ public class CreateUserRequest {
     @Size(min = 6, message = "Size of password must start from {min}")
     private String password;
 
+    private String firstName;
+    private String lastName;
+
     private Set<String> roles;
 
 }
