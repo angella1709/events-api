@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      layout:decorate="~{layout/base}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <title>Создание мероприятия - Events Platform</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow event-form-card">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h4 mb-0">
+                            <i class="fas fa-calendar-plus me-2"></i>Создание нового мероприятия
+                        </h2>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Сообщения об ошибках -->
+                        <div th:if="${error}" class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <span th:text="${error}">Ошибка при создании мероприятия</span>
+                        </div>
+
+                        <form id="createEventForm" class="needs-validation" novalidate>
+                            <!-- Поля формы остаются без изменений -->
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Название мероприятия *</label>
+                                <input type="text" class="form-control" id="name" name="name"
+                                       required minlength="3" maxlength="100"
+                                       placeholder="Введите название мероприятия">
+                                <div class="invalid-feedback">Пожалуйста, введите название мероприятия</div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="startTime" class="form-label">Начало мероприятия *</label>
+                                    <input type="datetime-local" class="form-control" id="startTime" name="startTime" required>
+                                    <div class="invalid-feedback">Выберите дату начала</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="endTime" class="form-label">Окончание мероприятия *</label>
+                                    <input type="datetime-local" class="form-control" id="endTime" name="endTime" required>
+                                    <div class="invalid-feedback">Выберите дату окончания</div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="cityLocation" class="form-label">Город *</label>
+                                    <input type="text" class="form-control" id="cityLocation" name="cityLocation"
+                                           required placeholder="Например, Москва">
+                                    <div class="invalid-feedback">Укажите город</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="streetLocation" class="form-label">Улица и номер *</label>
+                                    <input type="text" class="form-control" id="streetLocation" name="streetLocation"
+                                           required placeholder="Например, ул. Пушкина, д. 10">
+                                    <div class="invalid-feedback">Укажите адрес</div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Категории *</label>
+                                <div class="row">
+                                    <div th:each="category : ${categories}" class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                   th:id="'category_' + ${category.id}"
+                                                   th:value="${category.name}" name="categories">
+                                            <label class="form-check-label" th:for="'category_' + ${category.id}"
+                                                   th:text="${category.name}">Категория</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="invalid-feedback">Выберите хотя бы одну категорию</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="schedule" class="form-label">Описание мероприятия *</label>
+                                <textarea class="form-control" id="schedule" name="schedule" rows="4"
+                                          required placeholder="Опишите программу мероприятия..."
+                                          maxlength="1000"></textarea>
+                                <div class="form-text"><span id="scheduleCounter">0</span>/1000 символов</div>
+                                <div class="invalid-feedback">Добавьте описание мероприятия</div>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary flex-grow-1">
+                                    <i class="fas fa-plus me-2"></i>Создать мероприятие
+                                </button>
+                                <a th:href="@{/events}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i>Отмена
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mt-4 tips-card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-lightbulb me-2"></i>Советы по созданию мероприятия</h5>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Укажите точное время начала и окончания</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Выберите подходящие категории</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Добавьте подробное описание программы</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Укажите точный адрес проведения</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div layout:fragment="scripts">
+    <!-- Подключаем отдельный JS файл -->
+    <script src="/js/event-create.js"></script>
+</div>
+</body>
+</html>

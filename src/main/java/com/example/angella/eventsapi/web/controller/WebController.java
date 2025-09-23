@@ -103,12 +103,6 @@ public class WebController {
         }
     }
 
-    @GetMapping("/event/create")
-    public String createEventForm(Model model) {
-        model.addAttribute("categories", categoryService.findAll());
-        return "events/create";
-    }
-
     @GetMapping("/categories")
     public String categories(Model model) {
         model.addAttribute("categories", categoryService.findAll());
