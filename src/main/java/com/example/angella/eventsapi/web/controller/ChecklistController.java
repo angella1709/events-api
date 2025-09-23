@@ -2,10 +2,12 @@ package com.example.angella.eventsapi.web.controller;
 
 import com.example.angella.eventsapi.aop.AccessCheckType;
 import com.example.angella.eventsapi.aop.Accessible;
+import com.example.angella.eventsapi.mapper.ChecklistMapper;
 import com.example.angella.eventsapi.service.ChecklistService;
 import com.example.angella.eventsapi.utils.AuthUtils;
 import com.example.angella.eventsapi.web.dto.ChecklistItemDto;
 import com.example.angella.eventsapi.web.dto.CreateChecklistItemRequest;
+import com.example.angella.eventsapi.web.dto.UpdateChecklistItemRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

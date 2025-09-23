@@ -13,6 +13,6 @@ import org.mapstruct.ReportingPolicy;
 )
 public interface TaskMapper {
     @Mapping(target = "creator", source = "creator.username")
-    @Mapping(target = "assignedUser", source = "assignedUser.username") // ДОБАВИТЬ
+    @Mapping(target = "assignedUser", source = "assignedUser.username")
     TaskDto toDto(Task task);
 }

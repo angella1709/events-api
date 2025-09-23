@@ -28,6 +28,3 @@ public class ChecklistTemplate extends BaseEntity {
     private Set<TemplateItem> items = new HashSet<>();
 }
 
-enum TemplateCategory {
-    PICNIC, HIKING, PARTY, TRAVEL, SPORTS, BUSINESS, OTHER
-}
