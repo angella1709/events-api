@@ -59,8 +59,8 @@ public class SecurityConfiguration {
                                 // Authenticated pages
                                 .requestMatchers("/profile", "/event/create", "/event/edit/**").authenticated()
 
-                                // Admin pages
-                                .requestMatchers("/admin/**").hasRole("ADMIN")
+                                // Admin pages - ДОБАВИТЬ
+                                .requestMatchers("/admin/**", "/api/v1/admin/**").hasRole("ADMIN")
 
                                 .anyRequest().authenticated()
                 )
@@ -97,6 +97,4 @@ public class SecurityConfiguration {
 
         return http.build();
     }
-
-
 }

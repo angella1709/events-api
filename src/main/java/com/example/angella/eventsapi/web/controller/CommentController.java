@@ -1,7 +1,7 @@
 package com.example.angella.eventsapi.web.controller;
 
 import com.example.angella.eventsapi.aop.AccessCheckType;
-import com.example.angella.eventsapi.aop.Accessible;
+import com.example.angella.eventsapi.aop.Access;
 import com.example.angella.eventsapi.mapper.CommentMapper;
 import com.example.angella.eventsapi.service.CommentService;
 import com.example.angella.eventsapi.utils.AuthUtils;
@@ -41,7 +41,7 @@ public class CommentController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ORGANIZATION_OWNER')")
-    @Accessible(checkBy = AccessCheckType.COMMENT)
+    @Access(checkBy = AccessCheckType.COMMENT)
     public ResponseEntity<?> deleteComment(@PathVariable Long id, @RequestParam Long eventId) {
         commentService.deleteById(id);
 

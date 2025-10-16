@@ -1,7 +1,7 @@
 package com.example.angella.eventsapi.web.controller;
 
 import com.example.angella.eventsapi.aop.AccessCheckType;
-import com.example.angella.eventsapi.aop.Accessible;
+import com.example.angella.eventsapi.aop.Access;
 import com.example.angella.eventsapi.mapper.ChatMessageMapper;
 import com.example.angella.eventsapi.model.PageModel;
 import com.example.angella.eventsapi.service.ChatService;
@@ -29,7 +29,7 @@ public class ChatController {
 
     @GetMapping("/{eventId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Accessible(checkBy = AccessCheckType.PARTICIPANT)
+    @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<PageResponse<ChatMessageDto>> getMessages(
             @PathVariable Long eventId,
             PageModel pageModel) {
@@ -43,7 +43,7 @@ public class ChatController {
 
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Accessible(checkBy = AccessCheckType.PARTICIPANT)
+    @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<ChatMessageDto> createMessage(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam Long eventId,

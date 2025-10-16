@@ -1,7 +1,7 @@
 package com.example.angella.eventsapi.web.controller;
 
 import com.example.angella.eventsapi.aop.AccessCheckType;
-import com.example.angella.eventsapi.aop.Accessible;
+import com.example.angella.eventsapi.aop.Access;
 import com.example.angella.eventsapi.mapper.ChecklistMapper;
 import com.example.angella.eventsapi.service.ChecklistService;
 import com.example.angella.eventsapi.utils.AuthUtils;
@@ -25,11 +25,11 @@ import java.util.List;
 public class ChecklistController {
 
     private final ChecklistService checklistService;
-    private final ChecklistMapper checklistMapper; // Нужно создать этот маппер
+    private final ChecklistMapper checklistMapper;
 
     @GetMapping("/{eventId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Accessible(checkBy = AccessCheckType.PARTICIPANT)
+    @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<List<ChecklistItemDto>> getChecklist(@PathVariable Long eventId) {
         var items = checklistService.getChecklistForEvent(eventId);
         return ResponseEntity.ok(checklistMapper.toDtoList(items));
@@ -37,7 +37,7 @@ public class ChecklistController {
 
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Accessible(checkBy = AccessCheckType.PARTICIPANT)
+    @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<ChecklistItemDto> createItem(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam Long eventId,
@@ -76,7 +76,7 @@ public class ChecklistController {
 
     @PatchMapping("/{itemId}/toggle")
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Accessible(checkBy = AccessCheckType.PARTICIPANT)
+    @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<ChecklistItemDto> toggleItem(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long itemId) {

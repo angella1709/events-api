@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      layout:decorate="~{layout/base}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <title th:text="${event.name} + ' - Чат'">Чат мероприятия</title>
+    <style>
+        .chat-interface {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            height: calc(100vh - 200px);
+        }
+        .messages-container {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .tasks-section, .checklist-section {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            background: white;
+        }
+        .task-item, .checklist-item {
+            padding: 10px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 th:text="${event.name}">Название мероприятия</h1>
+            <a th:href="@{/chats}" class="btn btn-outline-primary">
+                ← Назад к чатам
+            </a>
+        </div>
+
+        <div class="chat-interface">
+            <!-- Основной чат -->
+            <div class="messages-container">
+                <div id="chatMessages">
+                    <!-- Сообщения будут загружаться через JavaScript -->
+                </div>
+                <div class="message-input mt-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="messageInput"
+                               placeholder="Введите сообщение...">
+                        <button class="btn btn-primary" id="sendMessage">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('imageUpload').click()">
+                            <i class="fas fa-image"></i> Добавить фото
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Боковая панель с задачами и списком -->
+            <div class="side-panel">
+                <!-- Задачи -->
+                <div class="tasks-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tasks text-primary"></i> Задачи
+                        </h5>
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+
+                    <div class="filter-buttons">
+                        <button class="btn btn-sm btn-outline-primary active filter-task" data-filter="all">
+                            Все
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary filter-task" data-filter="my">
+                            Мои
+                        </button>
+                    </div>
+
+                    <div id="tasksList">
+                        <div th:each="task : ${tasks}" class="task-item"
+                             th:data-assigned-user="${task.assignedUser?.id}"
+                             th:data-creator="${task.creator.id}">
+                            <div>
+                                <div th:text="${task.description}" class="fw-medium"></div>
+                                <small class="text-muted" th:text="'Назначено: ' + (${task.assignedUser} ?: 'не назначено')"></small>
+                            </div>
+                            <div class="task-actions">
+                                <input type="checkbox" th:checked="${task.completed}"
+                                       class="form-check-input task-complete">
+                                <button class="btn btn-sm btn-outline-danger ms-2 delete-task">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Список вещей -->
+                <div class="checklist-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list-check text-success"></i> Список вещей
+                        </h5>
+                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addChecklistModal">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+
+                    <div id="checklistList">
+                        <div th:each="item : ${checklist}" class="checklist-item">
+                            <div>
+                                <div th:text="${item.name}" class="fw-medium"></div>
+                                <small class="text-muted" th:text="'Кол-во: ' + ${item.quantity}"></small>
+                            </div>
+                            <div class="checklist-actions">
+                                <input type="checkbox" th:checked="${item.completed}"
+                                       class="form-check-input item-complete">
+                                <button class="btn btn-sm btn-outline-danger ms-2 delete-item">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальные окна -->
+    <div class="modal fade" id="addTaskModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить задачу</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taskForm">
+                        <div class="mb-3">
+                            <label class="form-label">Описание задачи</label>
+                            <textarea class="form-control" name="description" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Назначить пользователю</label>
+                            <select class="form-select" name="assignedUserId">
+                                <option value="">Не назначено</option>
+                                <option th:each="user : ${participants}"
+                                        th:value="${user.id}"
+                                        th:text="${user.username}">
+                                </option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" onclick="addTask()">Добавить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Аналогичное модальное окно для добавления вещи -->
+</div>
+
+<div layout:fragment="scripts">
+    <script th:inline="javascript">
+        const eventId = /*[[${event.id}]]*/ null;
+        const currentUserId = /*[[${currentUser.id}]]*/ null;
+
+        // WebSocket для реального времени
+        const socket = new WebSocket(`ws://localhost:8080/ws/chat/${eventId}`);
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'message') {
+                addMessageToChat(data.message);
+            } else if (data.type === 'task_update') {
+                updateTaskList(data.tasks);
+            } else if (data.type === 'checklist_update') {
+                updateChecklist(data.checklist);
+            }
+        };
+
+        // Функции для работы с задачами и списком
+        function addTask() {
+            const formData = new FormData(document.getElementById('taskForm'));
+            fetch(`/api/v1/task?eventId=${eventId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    description: formData.get('description'),
+                    assignedUserId: formData.get('assignedUserId') || null
+                })
+            }).then(response => {
+                if (response.ok) {
+                    $('#addTaskModal').modal('hide');
+                    loadTasks();
+                }
+            });
+        }
+
+        function filterTasks(filter) {
+            document.querySelectorAll('.filter-task').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === filter);
+            });
+
+            document.querySelectorAll('.task-item').forEach(item => {
+                const showAll = filter === 'all';
+                const showMy = filter === 'my' &&
+                    (item.dataset.assignedUser == currentUserId || item.dataset.creator == currentUserId);
+
+                item.style.display = showAll || showMy ? 'block' : 'none';
+            });
+        }
+
+        // Инициализация фильтрации
+        document.querySelectorAll('.filter-task').forEach(btn => {
+            btn.addEventListener('click', function() {
+                filterTasks(this.dataset.filter);
+            });
+        });
+
+        // Загрузка начальных данных
+        loadMessages();
+        loadTasks();
+        loadChecklist();
+    </script>
+</div>
+</body>
+</html>

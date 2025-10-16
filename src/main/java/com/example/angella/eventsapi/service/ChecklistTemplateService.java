@@ -9,6 +9,7 @@ import com.example.angella.eventsapi.repository.ChecklistTemplateRepository;
 import com.example.angella.eventsapi.repository.EventRepository;
 import com.example.angella.eventsapi.repository.TemplateItemRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,6 +67,31 @@ public class ChecklistTemplateService {
 
     public void deleteTemplate(Long templateId) {
         templateItemRepository.deleteByTemplateId(templateId);
+        templateRepository.deleteById(templateId);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public ChecklistTemplate getTemplateById(Long id) {
+        return templateRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Template not found"));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public ChecklistTemplate updateTemplate(Long id, ChecklistTemplate updatedTemplate) {
+        ChecklistTemplate template = getTemplateById(id);
+        template.setName(updatedTemplate.getName());
+        template.setDescription(updatedTemplate.getDescription());
+        template.setCategory(updatedTemplate.getCategory());
+        return templateRepository.save(template);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public ChecklistTemplate createTemplate(ChecklistTemplate template) {
+        return templateRepository.save(template);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public void deleteTemplate(Long templateId) {
         templateRepository.deleteById(templateId);
     }
 }

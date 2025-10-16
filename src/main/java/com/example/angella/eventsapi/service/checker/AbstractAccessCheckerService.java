@@ -1,6 +1,6 @@
 package com.example.angella.eventsapi.service.checker;
 
-import com.example.angella.eventsapi.aop.Accessible;
+import com.example.angella.eventsapi.aop.Access;
 import com.example.angella.eventsapi.security.AppUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,7 +13,7 @@ import java.util.function.Function;
 public abstract class AbstractAccessCheckerService<T extends AbstractAccessCheckerService.AccessData> implements AccessCheckerService {
 
     @Override
-    public boolean check(HttpServletRequest request, Accessible accessible) {
+    public boolean check(HttpServletRequest request, Access accessible) {
         if (!isUserAuthenticated()) {
             return false;
         }

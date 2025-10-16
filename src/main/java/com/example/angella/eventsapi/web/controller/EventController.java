@@ -1,7 +1,7 @@
 package com.example.angella.eventsapi.web.controller;
 
 import com.example.angella.eventsapi.aop.AccessCheckType;
-import com.example.angella.eventsapi.aop.Accessible;
+import com.example.angella.eventsapi.aop.Access;
 import com.example.angella.eventsapi.entity.Event;
 import com.example.angella.eventsapi.mapper.EventMapper;
 import com.example.angella.eventsapi.service.EventService;
@@ -45,7 +45,7 @@ public class EventController {
 
     @PutMapping("/{id}")
     @Transactional
-    @Accessible(checkBy = AccessCheckType.EVENT)
+    @Access(checkBy = AccessCheckType.EVENT)
     public ResponseEntity<EventDto> updateEvent(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id,
@@ -74,7 +74,7 @@ public class EventController {
 
     @DeleteMapping("/{eventId}/participant/{participantId}") // Новый путь
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Accessible(checkBy = AccessCheckType.PARTICIPANT_REMOVAL) // Новая аннотация
+    @Access(checkBy = AccessCheckType.PARTICIPANT_REMOVAL) // Новая аннотация
     public ResponseEntity<String> removeParticipantFromEvent(
             @PathVariable Long eventId,
             @PathVariable Long participantId) {
@@ -88,7 +88,7 @@ public class EventController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Accessible(checkBy = AccessCheckType.EVENT)
+    @Access(checkBy = AccessCheckType.EVENT)
     public ResponseEntity<Void> deleteEvent(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id) {

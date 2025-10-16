@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -15,4 +16,5 @@ public class ChatMessageDto {
     private String author;
     private Instant createdAt;
     private boolean edited;
+    private List<ImageDto> images;
 }

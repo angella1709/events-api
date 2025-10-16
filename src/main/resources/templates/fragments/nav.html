@@ -21,7 +21,11 @@
                     <a class="nav-link" th:href="@{/events}">Мероприятия</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" th:href="@{/chats}">Сообщения</a>
+                    <a class="nav-link" th:href="@{/chats}">Чаты</a>
+                </li>
+                <!-- Добавить для админа -->
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link" th:href="@{/admin/dashboard}">Админ-панель</a>
                 </li>
             </ul>
 

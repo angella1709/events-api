@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.MessageFormat;
 import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -53,12 +52,13 @@ public class TaskService {
         task.setDescription(description);
         task.setEvent(event);
         task.setCreator(user);
-        task.setAssignedUser(assignedUser);
+        task.setAssignedUser(assignedUser); // ДОБАВЛЕНО НАЗНАЧЕНИЕ ПОЛЬЗОВАТЕЛЯ
         task.setCompleted(false);
 
         return taskRepository.save(task);
     }
 
+    // Обновить метод updateTask для поддержки назначения пользователя
     public Task updateTask(Long taskId, String newDescription, Boolean completed,
                            Long assignedUserId, Long userId) {
         Task task = taskRepository.findById(taskId)
@@ -86,6 +86,7 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
+    // Остальные методы остаются без изменений
     public void deleteTask(Long taskId, Long userId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException(

@@ -6,6 +6,7 @@ import com.example.angella.eventsapi.exception.EntityNotFoundException;
 import com.example.angella.eventsapi.exception.RegisterUserException;
 import com.example.angella.eventsapi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.text.MessageFormat;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -62,5 +64,38 @@ public class UserService {
 
     public Set<String> getEmailsBySubscriptions(Collection<Long> categoriesId) {
         return userRepository.getEmailsBySubscriptions(categoriesId);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<User> findAllUsers() {
+        return userRepository.findAll();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public void blockUser(Long userId) {
+        User user = findById(userId);
+        user.setBlocked(true);
+        userRepository.save(user);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public void unblockUser(Long userId) {
+        User user = findById(userId);
+        user.setBlocked(false);
+        userRepository.save(user);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public void addAdminRole(Long userId) {
+        User user = findById(userId);
+        user.addRole(Role.ROLE_ADMIN);
+        userRepository.save(user);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public void removeAdminRole(Long userId) {
+        User user = findById(userId);
+        user.getRoles().remove(Role.ROLE_ADMIN);
+        userRepository.save(user);
     }
 }

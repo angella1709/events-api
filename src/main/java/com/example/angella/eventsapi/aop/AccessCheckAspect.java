@@ -26,7 +26,7 @@ public class AccessCheckAspect {
     private final Map<AccessCheckType, AccessCheckerService> accessCheckServiceMap;
 
     @Before("@annotation(accessible)")
-    public void check(JoinPoint joinPoint, Accessible accessible) {
+    public void check(JoinPoint joinPoint, Access accessible) {
         if (accessible == null) {
             throw new IllegalArgumentException("Accessible is null!");
         }

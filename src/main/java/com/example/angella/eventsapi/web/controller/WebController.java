@@ -10,11 +10,14 @@ import com.example.angella.eventsapi.web.dto.CreateEventRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -61,11 +64,27 @@ public class WebController {
     public String events(Model model,
                          @RequestParam(required = false) String search,
                          @RequestParam(required = false) Long categoryId,
-                         @RequestParam(required = false) String date) {
+                         @RequestParam(required = false) String date,
+                         @RequestParam(required = false, defaultValue = "newest") String sort) {
         try {
-            var events = eventService.findAll();
+            List<Event> events;
 
-            // Apply filters if provided
+            // Сортировка
+            switch (sort) {
+                case "oldest":
+                    events = eventRepository.findAllOrderByStartTimeAsc();
+                    break;
+                case "popular":
+                    // Можно добавить логику для популярности
+                    events = eventService.findAll();
+                    break;
+                case "newest":
+                default:
+                    events = eventRepository.findAllOrderByStartTimeDesc();
+                    break;
+            }
+
+            // Применяем фильтры
             if (search != null && !search.isEmpty()) {
                 events = events.stream()
                         .filter(event -> event.getName().toLowerCase().contains(search.toLowerCase()))
@@ -84,6 +103,7 @@ public class WebController {
             model.addAttribute("searchTerm", search);
             model.addAttribute("selectedCategory", categoryId);
             model.addAttribute("selectedDate", date);
+            model.addAttribute("selectedSort", sort);
 
             return "events/list";
         } catch (Exception e) {
@@ -179,5 +199,60 @@ public class WebController {
             model.addAttribute("categories", categoryService.findAll());
             return "events/create";
         }
+    }
+
+    @GetMapping("/event/{id}")
+    public String eventDetail(@PathVariable Long id, Model model,
+                              @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            Event event = eventService.getByIdWithRelations(id);
+            boolean isParticipant = false;
+            boolean isCreator = false;
+
+            if (userDetails != null) {
+                User currentUser = userService.findByUsername(userDetails.getUsername());
+                isParticipant = event.getParticipants().contains(currentUser);
+                isCreator = event.getCreator().getId().equals(currentUser.getId());
+            }
+
+            model.addAttribute("event", event);
+            model.addAttribute("isParticipant", isParticipant);
+            model.addAttribute("isCreator", isCreator);
+            model.addAttribute("tasks", taskService.getTasksForEvent(id));
+            model.addAttribute("checklist", checklistService.getChecklistForEvent(id));
+            model.addAttribute("comments", commentService.findAllByEventId(id));
+
+            return "events/detail";
+        } catch (Exception e) {
+            log.error("Error loading event detail page for id: {}", id, e);
+            model.addAttribute("error", "Мероприятие не найдено");
+            return "error/404";
+        }
+    }
+
+    @PostMapping("/event/{id}/join")
+    public String joinEvent(@PathVariable Long id,
+                            @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+
+        User user = userService.findByUsername(userDetails.getUsername());
+        eventService.addParticipant(id, user.getId());
+
+        return "redirect:/event/" + id + "?joined=true";
+    }
+
+    @PostMapping("/event/{id}/leave")
+    public String leaveEvent(@PathVariable Long id,
+                             @AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+
+        User user = userService.findByUsername(userDetails.getUsername());
+        eventService.removeParticipant(id, user.getId());
+
+        return "redirect:/event/" + id + "?left=true";
     }
 }

@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -174,5 +175,13 @@ public class EventService {
 
     public boolean isEventCreator(Long eventId, Long userId) {
         return eventRepository.existsByIdAndCreatorId(eventId, userId);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public void deleteEventByAdmin(Long eventId) {
+        if (!eventRepository.existsById(eventId)) {
+            throw new EntityNotFoundException("Event not found");
+        }
+        eventRepository.deleteById(eventId);
     }
 }

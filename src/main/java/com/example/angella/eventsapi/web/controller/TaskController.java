@@ -1,7 +1,7 @@
 package com.example.angella.eventsapi.web.controller;
 
 import com.example.angella.eventsapi.aop.AccessCheckType;
-import com.example.angella.eventsapi.aop.Accessible;
+import com.example.angella.eventsapi.aop.Access;
 import com.example.angella.eventsapi.mapper.TaskMapper;
 import com.example.angella.eventsapi.service.TaskService;
 import com.example.angella.eventsapi.utils.AuthUtils;
@@ -29,7 +29,7 @@ public class TaskController {
 
     @GetMapping("/{eventId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Accessible(checkBy = AccessCheckType.PARTICIPANT)
+    @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<List<TaskDto>> getTasks(@PathVariable Long eventId) {
         return ResponseEntity.ok(
                 taskService.getTasksForEvent(eventId).stream()
@@ -40,7 +40,7 @@ public class TaskController {
 
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Accessible(checkBy = AccessCheckType.PARTICIPANT)
+    @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<TaskDto> createTask(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam Long eventId,
@@ -49,7 +49,8 @@ public class TaskController {
         var createdTask = taskService.createTask(
                 request.getDescription(),
                 eventId,
-                AuthUtils.getCurrentUserId(userDetails)
+                AuthUtils.getCurrentUserId(userDetails),
+                request.getAssignedUserId() // ДОБАВЛЕНО
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(taskMapper.toDto(createdTask));
@@ -65,6 +66,7 @@ public class TaskController {
                 taskId,
                 taskDto.getDescription(),
                 taskDto.isCompleted(),
+                taskDto.getAssignedUserId(), // ДОБАВЛЕНО
                 AuthUtils.getCurrentUserId(userDetails)
         );
         return ResponseEntity.ok(taskMapper.toDto(updatedTask));

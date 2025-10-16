@@ -1,5 +1,6 @@
 package com.example.angella.eventsapi.repository;
 
+import com.example.angella.eventsapi.entity.Category;
 import com.example.angella.eventsapi.entity.Event;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecificationExecutor<Event> {
 
@@ -30,6 +32,18 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     @Override
     @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator"})
     Optional<Event> findById(Long id);
+
+    @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator"})
+    @Query("SELECT e FROM Event e ORDER BY e.startTime ASC")
+    List<Event> findAllOrderByStartTimeAsc();
+
+    @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator"})
+    @Query("SELECT e FROM Event e ORDER BY e.startTime DESC")
+    List<Event> findAllOrderByStartTimeDesc();
+
+    @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator"})
+    @Query("SELECT e FROM Event e WHERE e.categories IN :categories ORDER BY e.startTime ASC")
+    List<Event> findByCategoriesOrderByStartTime(@Param("categories") Set<Category> categories);
 
     boolean existsByIdAndParticipantsId(Long eventId, Long userId);
 

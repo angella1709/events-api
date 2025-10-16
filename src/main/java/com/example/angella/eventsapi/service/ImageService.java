@@ -1,15 +1,16 @@
 package com.example.angella.eventsapi.service;
 
-import com.example.angella.eventsapi.entity.Image;
-import com.example.angella.eventsapi.entity.User;
+import com.example.angella.eventsapi.entity.*;
 import com.example.angella.eventsapi.exception.AccessDeniedException;
 import com.example.angella.eventsapi.exception.EntityNotFoundException;
+import com.example.angella.eventsapi.repository.EventRepository;
 import com.example.angella.eventsapi.repository.ImageRepository;
 import com.example.angella.eventsapi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -21,14 +22,17 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class ImageService {
 
     private final ImageRepository imageRepository;
     private final UserRepository userRepository;
+    private final EventRepository eventRepository;
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
+    // АВАТАР ПОЛЬЗОВАТЕЛЯ
     public String uploadAvatar(MultipartFile file, Long userId) {
         try {
             User user = userRepository.findById(userId)
@@ -40,7 +44,7 @@ public class ImageService {
                 imageRepository.delete(user.getAvatar());
             }
 
-            Image image = saveImage(file, user);
+            Image image = saveImage(file, user, null, null);
             user.setAvatar(image);
             userRepository.save(user);
 
@@ -51,9 +55,44 @@ public class ImageService {
         }
     }
 
-    private Image saveImage(MultipartFile file, Object entity) throws IOException {
+    // ИЗОБРАЖЕНИЕ ДЛЯ СОБЫТИЯ
+    public String uploadEventImage(MultipartFile file, Long eventId, Long userId) {
+        try {
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new EntityNotFoundException("Event not found"));
+
+            // Проверяем права доступа - только участники события могут загружать изображения
+            if (!eventRepository.existsByIdAndParticipantsId(eventId, userId)) {
+                throw new AccessDeniedException("Only event participants can upload images");
+            }
+
+            Image image = saveImage(file, null, event, null);
+            return "/images/" + image.getFilename();
+        } catch (IOException e) {
+            log.error("Error uploading event image", e);
+            throw new RuntimeException("Failed to upload image");
+        }
+    }
+
+    // ИЗОБРАЖЕНИЕ ДЛЯ ЧАТА
+    public Image saveImageForChat(ChatMessage chatMessage, MultipartFile file) throws IOException {
+        Image image = saveImage(file, null, null, chatMessage);
+        return image;
+    }
+
+    // ОСНОВНОЙ МЕТОД СОХРАНЕНИЯ ИЗОБРАЖЕНИЯ
+    private Image saveImage(MultipartFile file, User user, Event event, ChatMessage chatMessage) throws IOException {
         String originalFilename = file.getOriginalFilename();
-        String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        if (originalFilename == null || originalFilename.isEmpty()) {
+            throw new IllegalArgumentException("File name cannot be empty");
+        }
+
+        String fileExtension = "";
+        int lastDotIndex = originalFilename.lastIndexOf(".");
+        if (lastDotIndex > 0) {
+            fileExtension = originalFilename.substring(lastDotIndex);
+        }
+
         String filename = UUID.randomUUID() + fileExtension;
 
         Path uploadPath = Paths.get(uploadDir);
@@ -72,23 +111,28 @@ public class ImageService {
         image.setFilePath(filePath.toString());
 
         // Устанавливаем связь в зависимости от типа entity
-        if (entity instanceof User) {
-            image.setUser((User) entity);
+        if (user != null) {
+            image.setUser(user);
+        } else if (event != null) {
+            image.setEvent(event);
+        } else if (chatMessage != null) {
+            image.setChatMessage(chatMessage);
         }
-        // Добавить обработку других типов entity
 
         return imageRepository.save(image);
     }
 
+    // УДАЛЕНИЕ ФАЙЛА ИЗОБРАЖЕНИЯ
     private void deleteImageFile(Image image) {
         try {
             Path filePath = Paths.get(image.getFilePath());
             Files.deleteIfExists(filePath);
         } catch (IOException e) {
-            log.warn("Failed to delete image file: {}", image.getFilePath());
+            log.warn("Failed to delete image file: {}", image.getFilePath(), e);
         }
     }
 
+    // УДАЛЕНИЕ ИЗОБРАЖЕНИЯ
     public void deleteImage(Long imageId, Long userId) {
         Image image = imageRepository.findById(imageId)
                 .orElseThrow(() -> new EntityNotFoundException("Image not found"));
@@ -98,7 +142,39 @@ public class ImageService {
             throw new AccessDeniedException("Cannot delete other user's image");
         }
 
+        if (image.getChatMessage() != null && !image.getChatMessage().getAuthor().getId().equals(userId)) {
+            throw new AccessDeniedException("Cannot delete other user's chat images");
+        }
+
         deleteImageFile(image);
         imageRepository.delete(image);
+    }
+
+    // ПОЛУЧЕНИЕ ИЗОБРАЖЕНИЙ ПОЛЬЗОВАТЕЛЯ
+    public java.util.List<Image> getUserImages(Long userId) {
+        return imageRepository.findByUserId(userId);
+    }
+
+    // ПОЛУЧЕНИЕ ИЗОБРАЖЕНИЙ СОБЫТИЯ
+    public java.util.List<Image> getEventImages(Long eventId) {
+        return imageRepository.findByEventId(eventId);
+    }
+
+    // ПОЛУЧЕНИЕ ИЗОБРАЖЕНИЙ СООБЩЕНИЯ ЧАТА
+    public java.util.List<Image> getChatMessageImages(Long chatMessageId) {
+        return imageRepository.findByChatMessageId(chatMessageId);
+    }
+
+    // ПОЛУЧЕНИЕ ИЗОБРАЖЕНИЯ ПО ID С ПРОВЕРКОЙ ПРАВ
+    public Image getImageById(Long imageId, Long userId) {
+        Image image = imageRepository.findById(imageId)
+                .orElseThrow(() -> new EntityNotFoundException("Image not found"));
+
+        // Проверяем права доступа
+        if (image.getUser() != null && !image.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("Cannot access other user's image");
+        }
+
+        return image;
     }
 }
