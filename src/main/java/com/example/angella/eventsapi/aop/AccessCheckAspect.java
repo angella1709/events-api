@@ -48,7 +48,7 @@ public class AccessCheckAspect {
 
         if (!checkerService.check(request, accessible)) {
             MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-            log.error("Access denied for action: " + signature.getMethod());
+            log.error("Access denied for action: " + signature.getMethod().getName());
             throw new AccessDeniedException("Access denied for this action!");
         }
     }

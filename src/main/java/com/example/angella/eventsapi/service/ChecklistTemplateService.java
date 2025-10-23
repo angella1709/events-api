@@ -61,15 +61,6 @@ public class ChecklistTemplateService {
                 .toList();
     }
 
-    public ChecklistTemplate createTemplate(ChecklistTemplate template) {
-        return templateRepository.save(template);
-    }
-
-    public void deleteTemplate(Long templateId) {
-        templateItemRepository.deleteByTemplateId(templateId);
-        templateRepository.deleteById(templateId);
-    }
-
     @PreAuthorize("hasRole('ADMIN')")
     public ChecklistTemplate getTemplateById(Long id) {
         return templateRepository.findById(id)
@@ -92,6 +83,7 @@ public class ChecklistTemplateService {
 
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteTemplate(Long templateId) {
+        templateItemRepository.deleteByTemplateId(templateId);
         templateRepository.deleteById(templateId);
     }
 }

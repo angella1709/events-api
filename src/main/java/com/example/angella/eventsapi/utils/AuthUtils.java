@@ -9,7 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @UtilityClass
 public class AuthUtils {
 
-    public Long getCurrentUserId(UserDetails userDetails) {
+    public static Long getCurrentUserId(UserDetails userDetails) {
         if (userDetails instanceof AppUserDetails details) {
             return details.getId();
         }
@@ -17,7 +17,7 @@ public class AuthUtils {
         throw new ServerException("UserDetails is not instanceof AppUserDetails");
     }
 
-    public AppUserDetails getAuthenticatedUser() {
+    public static AppUserDetails getAuthenticatedUser() {
         var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (principal instanceof AppUserDetails details) {

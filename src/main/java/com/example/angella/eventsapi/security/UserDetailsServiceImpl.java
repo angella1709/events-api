@@ -1,5 +1,6 @@
 package com.example.angella.eventsapi.security;
 
+import com.example.angella.eventsapi.entity.User;
 import com.example.angella.eventsapi.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,6 +18,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return new AppUserDetails(userService.findByUsername(username));
+        User user = userService.findByUsername(username);
+        return new AppUserDetails(user); // передаем User в конструктор
     }
 }

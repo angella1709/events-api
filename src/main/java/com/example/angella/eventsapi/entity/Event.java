@@ -1,10 +1,7 @@
 package com.example.angella.eventsapi.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -15,6 +12,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Setter
 @Getter
+@ToString
 public class Event extends BaseEntity {
 
     @Column(nullable = false)

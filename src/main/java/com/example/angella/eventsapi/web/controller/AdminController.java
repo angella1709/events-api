@@ -70,12 +70,6 @@ public class AdminController {
 
     @GetMapping("/templates")
     public String templateManagement(Model model) {
-        // Логика для управления шаблонами
-        return "admin/templates";
-    }
-
-    @GetMapping("/templates")
-    public String templateManagement(Model model) {
         model.addAttribute("templates", templateService.getAllTemplates());
         return "admin/templates";
     }
