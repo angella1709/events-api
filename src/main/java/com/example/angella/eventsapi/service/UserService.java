@@ -72,20 +72,6 @@ public class UserService {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    public void blockUser(Long userId) {
-        User user = findById(userId);
-        user.setBlocked(true);
-        userRepository.save(user);
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    public void unblockUser(Long userId) {
-        User user = findById(userId);
-        user.setBlocked(false);
-        userRepository.save(user);
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
     public void addAdminRole(Long userId) {
         User user = findById(userId);
         user.addRole(Role.ROLE_ADMIN);

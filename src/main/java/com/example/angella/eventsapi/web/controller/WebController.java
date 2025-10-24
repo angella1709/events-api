@@ -21,6 +21,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -175,6 +176,7 @@ public class WebController {
 
     @PostMapping("/event/create")
     public String createEvent(@ModelAttribute CreateEventRequest request,
+                              @RequestParam("categories") List<String> categories, // Добавляем отдельный параметр для категорий
                               Authentication authentication,
                               Model model) {
         try {
@@ -183,6 +185,12 @@ public class WebController {
             }
 
             User user = userService.findByUsername(authentication.getName());
+
+            // Устанавливаем категории из параметра
+            if (categories != null && !categories.isEmpty()) {
+                request.setCategories(new HashSet<>(categories));
+            }
+
             request.setCreatorId(user.getId());
 
             Event event = eventMapper.toEntity(request);

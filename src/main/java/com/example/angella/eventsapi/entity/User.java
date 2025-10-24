@@ -49,8 +49,6 @@ public class User extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "category_id"))
     private Set<Category> subscribedCategories = new HashSet<>();
 
-    private boolean blocked = false;
-
     public void addRole(Role role) {
         if (this.roles == null) {
             this.roles = new HashSet<>();

@@ -33,7 +33,6 @@ public class AdminController {
 
         model.addAttribute("totalUsers", users.size());
         model.addAttribute("totalEvents", events.size());
-        model.addAttribute("activeUsers", users.stream().filter(u -> !u.isBlocked()).count());
 
         return "admin/dashboard";
     }
@@ -43,18 +42,6 @@ public class AdminController {
         List<User> users = userService.findAllUsers();
         model.addAttribute("users", users);
         return "admin/users";
-    }
-
-    @PostMapping("/users/{userId}/block")
-    public String blockUser(@PathVariable Long userId) {
-        userService.blockUser(userId);
-        return "redirect:/admin/users?success=User blocked";
-    }
-
-    @PostMapping("/users/{userId}/unblock")
-    public String unblockUser(@PathVariable Long userId) {
-        userService.unblockUser(userId);
-        return "redirect:/admin/users?success=User unblocked";
     }
 
     @GetMapping("/events")

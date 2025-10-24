@@ -20,11 +20,11 @@ public class CreateEventRequest {
     private String name;
 
     @NotNull(message = "Start time must be set!")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "UTC")
     private Instant startTime;
 
     @NotNull(message = "End time must be set!")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "UTC")
     private Instant endTime;
 
     @NotEmpty(message = "Categories must not be empty!")
@@ -41,5 +41,4 @@ public class CreateEventRequest {
 
     @NotNull(message = "Id of creator must be set!")
     private Long creatorId;
-
 }
