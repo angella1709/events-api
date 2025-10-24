@@ -39,13 +39,13 @@
                                 <div class="col-md-6">
                                     <label for="startTime" class="form-label">Начало мероприятия *</label>
                                     <input type="datetime-local" class="form-control" id="startTime" name="startTime"
-                                           required step="1">
+                                           required step="60">
                                     <div class="invalid-feedback">Выберите дату начала</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="endTime" class="form-label">Окончание мероприятия *</label>
                                     <input type="datetime-local" class="form-control" id="endTime" name="endTime"
-                                           required step="1">
+                                           required step="60">
                                     <div class="invalid-feedback">Выберите дату окончания</div>
                                 </div>
                             </div>
@@ -67,10 +67,12 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Категории *</label>
-                                <div class="row">
+
+                                <!-- Существующие категории -->
+                                <div class="row mb-2">
                                     <div th:each="category : ${categories}" class="col-md-4 mb-2">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox"
+                                            <input class="form-check-input category-checkbox" type="checkbox"
                                                    th:id="'category_' + ${category.id}"
                                                    th:value="${category.name}" name="categories">
                                             <label class="form-check-label" th:for="'category_' + ${category.id}"
@@ -78,7 +80,24 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="invalid-feedback">Выберите хотя бы одну категорию</div>
+
+                                <!-- Поле для новой категории -->
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <input type="text" class="form-control" id="newCategory"
+                                               placeholder="Введите новую категорию...">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="button" class="btn btn-outline-primary w-100" id="addCategoryBtn">
+                                            <i class="fas fa-plus me-1"></i>Добавить
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Список добавленных новых категорий -->
+                                <div id="newCategoriesList" class="mt-2"></div>
+
+                                <div class="invalid-feedback">Выберите или добавьте хотя бы одну категорию</div>
                             </div>
 
                             <div class="mb-3">
@@ -131,7 +150,54 @@
                 scheduleCounter.textContent = this.value.length;
             });
 
-            // Преобразование datetime-local в нужный формат перед отправкой
+            // Обработка добавления новых категорий
+            document.getElementById('addCategoryBtn').addEventListener('click', function() {
+                const newCategoryInput = document.getElementById('newCategory');
+                const categoryName = newCategoryInput.value.trim();
+
+                if (categoryName) {
+                    addNewCategory(categoryName);
+                    newCategoryInput.value = '';
+                }
+            });
+
+            // Обработка нажатия Enter в поле новой категории
+            document.getElementById('newCategory').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('addCategoryBtn').click();
+                }
+            });
+
+            function addNewCategory(categoryName) {
+                const newCategoriesList = document.getElementById('newCategoriesList');
+
+                // Проверяем, не добавлена ли уже такая категория
+                const existingCheckboxes = document.querySelectorAll('input[name="categories"]');
+                const existingCategories = Array.from(existingCheckboxes).map(cb => cb.value);
+
+                if (existingCategories.includes(categoryName)) {
+                    alert('Эта категория уже добавлена!');
+                    return;
+                }
+
+                // Создаем элемент для новой категории
+                const categoryElement = document.createElement('div');
+                categoryElement.className = 'badge bg-secondary me-2 mb-2 p-2 d-inline-flex align-items-center';
+                categoryElement.innerHTML = `
+                    ${categoryName}
+                    <input type="hidden" name="categories" value="${categoryName}">
+                    <button type="button" class="btn-close btn-close-white ms-1" onclick="removeCategory(this)"></button>
+                `;
+
+                newCategoriesList.appendChild(categoryElement);
+            }
+
+            window.removeCategory = function(button) {
+                button.parentElement.remove();
+            };
+
+            // Валидация формы
             form.addEventListener('submit', function(e) {
                 if (!form.checkValidity()) {
                     e.preventDefault();
@@ -140,16 +206,14 @@
                     return;
                 }
 
-                // Преобразуем даты в правильный формат
-                const startTimeInput = document.getElementById('startTime');
-                const endTimeInput = document.getElementById('endTime');
+                // Проверяем, что выбрана хотя бы одна категория
+                const categoryInputs = document.querySelectorAll('input[name="categories"]');
+                const hasCategories = Array.from(categoryInputs).some(input => input.checked || input.type === 'hidden');
 
-                // Добавляем секунды к времени
-                if (startTimeInput.value) {
-                    startTimeInput.value = startTimeInput.value + ':00';
-                }
-                if (endTimeInput.value) {
-                    endTimeInput.value = endTimeInput.value + ':00';
+                if (!hasCategories) {
+                    e.preventDefault();
+                    alert('Пожалуйста, выберите или добавьте хотя бы одну категорию');
+                    return;
                 }
             });
         });

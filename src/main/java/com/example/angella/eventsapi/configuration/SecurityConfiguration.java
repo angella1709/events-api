@@ -44,22 +44,27 @@ public class SecurityConfiguration {
         http
                 .authorizeHttpRequests((auth) ->
                         auth
-                                // Public pages
-                                .requestMatchers("/", "/home", "/events", "/event/**",
+                                // Статические ресурсы - самый высокий приоритет
+                                .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico").permitAll()
+
+                                // Публичные API endpoints
+                                .requestMatchers("/api/v1/public/**").permitAll()
+
+                                // Публичные страницы
+                                .requestMatchers("/", "/home", "/events", "/event/details/**",
                                         "/categories", "/about", "/contact",
                                         "/login", "/register", "/error/**").permitAll()
 
-                                // Static resources
-                                .requestMatchers("/css/**", "/js/**", "/images/**",
-                                        "/webjars/**", "/favicon.ico").permitAll()
+                                // Страницы создания/редактирования событий
+                                .requestMatchers("/event/create", "/event/edit/**").authenticated()
 
-                                // API endpoints
-                                .requestMatchers("/api/v1/public/**").permitAll()
+                                // Аутентифицированные страницы
+                                .requestMatchers("/profile", "/chats/**").authenticated()
 
-                                // Authenticated pages
-                                .requestMatchers("/profile", "/event/create", "/event/edit/**").authenticated()
+                                // API endpoints (должны быть после публичных)
+                                .requestMatchers("/api/v1/**").authenticated()
 
-                                // Admin pages - ДОБАВИТЬ
+                                // Admin pages
                                 .requestMatchers("/admin/**", "/api/v1/admin/**").hasRole("ADMIN")
 
                                 .anyRequest().authenticated()

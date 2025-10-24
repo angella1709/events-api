@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Set;
 
 @Data
@@ -41,4 +42,12 @@ public class CreateEventRequest {
 
     @NotNull(message = "Id of creator must be set!")
     private Long creatorId;
+
+    public Instant getStartTimeAsInstant() {
+        return startTime != null ? startTime.atZone(ZoneId.systemDefault()).toInstant() : null;
+    }
+
+    public Instant getEndTimeAsInstant() {
+        return endTime != null ? endTime.atZone(ZoneId.systemDefault()).toInstant() : null;
+    }
 }

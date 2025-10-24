@@ -4,6 +4,7 @@ import com.example.angella.eventsapi.entity.Category;
 import com.example.angella.eventsapi.exception.EntityNotFoundException;
 import com.example.angella.eventsapi.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.text.MessageFormat;
@@ -14,6 +15,7 @@ import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
@@ -41,6 +43,12 @@ public class CategoryService {
         List<Category> categoriesForUpdate = categories.stream()
                 .filter(it -> !existedCategoryNames.contains(it.getName()))
                 .toList();
+
+        // Логируем создание новых категорий
+        if (!categoriesForUpdate.isEmpty()) {
+            log.info("Creating new categories: {}",
+                    categoriesForUpdate.stream().map(Category::getName).collect(Collectors.toList()));
+        }
 
         return Stream.concat(existedCategories.stream(),
                         categoryRepository.saveAll(categoriesForUpdate).stream())

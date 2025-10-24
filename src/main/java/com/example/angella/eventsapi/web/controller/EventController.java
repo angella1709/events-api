@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/event")
+@RequestMapping("/api/v1/events") // Изменено с "/api/v1/event" на "/api/v1/events"
 @RequiredArgsConstructor
 public class EventController {
 
@@ -72,9 +72,9 @@ public class EventController {
                 ResponseEntity.badRequest().body("Can't add user to event");
     }
 
-    @DeleteMapping("/{eventId}/participant/{participantId}") // Новый путь
+    @DeleteMapping("/{eventId}/participant/{participantId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Access(checkBy = AccessCheckType.PARTICIPANT_REMOVAL) // Новая аннотация
+    @Access(checkBy = AccessCheckType.PARTICIPANT_REMOVAL)
     public ResponseEntity<String> removeParticipantFromEvent(
             @PathVariable Long eventId,
             @PathVariable Long participantId) {

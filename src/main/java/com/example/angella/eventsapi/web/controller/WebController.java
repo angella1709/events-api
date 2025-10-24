@@ -3,13 +3,8 @@ package com.example.angella.eventsapi.web.controller;
 import com.example.angella.eventsapi.entity.Event;
 import com.example.angella.eventsapi.entity.User;
 import com.example.angella.eventsapi.mapper.EventMapper;
-import com.example.angella.eventsapi.repository.EventRepository; // ADD THIS
-import com.example.angella.eventsapi.service.CategoryService;
-import com.example.angella.eventsapi.service.ChecklistService; // ADD THIS
-import com.example.angella.eventsapi.service.CommentService; // ADD THIS
-import com.example.angella.eventsapi.service.EventService;
-import com.example.angella.eventsapi.service.TaskService; // ADD THIS
-import com.example.angella.eventsapi.service.UserService;
+import com.example.angella.eventsapi.repository.EventRepository;
+import com.example.angella.eventsapi.service.*;
 import com.example.angella.eventsapi.web.dto.CreateEventRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,10 +30,11 @@ public class WebController {
     private final CategoryService categoryService;
     private final UserService userService;
     private final EventMapper eventMapper;
-    private final EventRepository eventRepository; // ADD THIS
-    private final TaskService taskService; // ADD THIS
-    private final ChecklistService checklistService; // ADD THIS
-    private final CommentService commentService; // ADD THIS
+    private final EventRepository eventRepository;
+    private final TaskService taskService;
+    private final ChecklistService checklistService;
+    private final CommentService commentService;
+    private final ImageService imageService;
 
     @GetMapping("/")
     public String home(Model model, Authentication authentication) {
@@ -122,7 +119,6 @@ public class WebController {
         }
     }
 
-
     @GetMapping("/categories")
     public String categories(Model model) {
         model.addAttribute("categories", categoryService.findAll());
@@ -174,9 +170,29 @@ public class WebController {
         return "contact";
     }
 
+    // НОВЫЙ МЕТОД: Форма создания события
+    @GetMapping("/event/create")
+    public String createEventForm(Model model, Authentication authentication) {
+        if (authentication == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            model.addAttribute("event", new CreateEventRequest());
+            model.addAttribute("categories", categoryService.findAll());
+            return "events/create";
+        } catch (Exception e) {
+            log.error("Error loading event creation form", e);
+            model.addAttribute("error", "Не удалось загрузить форму создания мероприятия");
+            return "events/create";
+        }
+    }
+
+    //Создание события
     @PostMapping("/event/create")
     public String createEvent(@ModelAttribute CreateEventRequest request,
-                              @RequestParam("categories") List<String> categories, // Добавляем отдельный параметр для категорий
+                              @RequestParam("categories") List<String> categories,
+                              @RequestParam(value = "eventImage", required = false) MultipartFile eventImage,
                               Authentication authentication,
                               Model model) {
         try {
@@ -194,7 +210,17 @@ public class WebController {
             request.setCreatorId(user.getId());
 
             Event event = eventMapper.toEntity(request);
-            eventService.create(event, user.getId());
+            Event savedEvent = eventService.create(event, user.getId());
+
+            // Обработка изображения, если оно загружено
+            if (eventImage != null && !eventImage.isEmpty()) {
+                try {
+                    imageService.uploadEventImage(eventImage, savedEvent.getId(), user.getId());
+                } catch (Exception e) {
+                    log.warn("Failed to upload event image: {}", e.getMessage());
+                    // Продолжаем без изображения
+                }
+            }
 
             return "redirect:/events?created=true";
         } catch (Exception e) {
@@ -205,7 +231,8 @@ public class WebController {
         }
     }
 
-    @GetMapping("/event/{id}")
+    // ИСПРАВЛЕННЫЙ МЕТОД: Детали события с явным путем
+    @GetMapping("/event/details/{id}")
     public String eventDetail(@PathVariable Long id, Model model,
                               @AuthenticationPrincipal UserDetails userDetails) {
         try {
@@ -244,7 +271,7 @@ public class WebController {
         User user = userService.findByUsername(userDetails.getUsername());
         eventService.addParticipant(id, user.getId());
 
-        return "redirect:/event/" + id + "?joined=true";
+        return "redirect:/event/details/" + id + "?joined=true";
     }
 
     @PostMapping("/event/{id}/leave")
@@ -257,6 +284,6 @@ public class WebController {
         User user = userService.findByUsername(userDetails.getUsername());
         eventService.removeParticipant(id, user.getId());
 
-        return "redirect:/event/" + id + "?left=true";
+        return "redirect:/event/details/" + id + "?left=true";
     }
 }

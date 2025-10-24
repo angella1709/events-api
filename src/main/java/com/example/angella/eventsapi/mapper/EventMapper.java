@@ -21,6 +21,8 @@ public interface EventMapper {
     @Mapping(target = "location.city", source = "cityLocation")
     @Mapping(target = "location.street", source = "streetLocation")
     @Mapping(target = "creator.id", source = "creatorId")
+    @Mapping(target = "startTime", expression = "java(request.getStartTimeAsInstant())")
+    @Mapping(target = "endTime", expression = "java(request.getEndTimeAsInstant())")
     Event toEntity(CreateEventRequest request);
 
     @Mapping(target = "schedule.description", source = "schedule")

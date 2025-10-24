@@ -15,12 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/public/event")
+@RequestMapping("/api/v1/public/events") // Изменено для согласованности
 @RequiredArgsConstructor
 public class PublicEventController {
 
     private final EventService eventService;
-
     private final EventMapper eventMapper;
 
     @GetMapping("/filter")
@@ -43,5 +42,4 @@ public class PublicEventController {
     public ResponseEntity<EventDto> getEventById(@PathVariable Long id) {
         return ResponseEntity.ok(eventMapper.toDto(eventService.getById(id)));
     }
-
 }
