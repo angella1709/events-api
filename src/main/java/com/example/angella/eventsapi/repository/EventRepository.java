@@ -42,7 +42,7 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     List<Event> findAllOrderByStartTimeDesc();
 
     @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator"})
-    @Query("SELECT e FROM Event e WHERE e.categories IN :categories ORDER BY e.startTime ASC")
+    @Query("SELECT e FROM Event e JOIN e.categories c WHERE c IN :categories ORDER BY e.startTime")
     List<Event> findByCategoriesOrderByStartTime(@Param("categories") Set<Category> categories);
 
     boolean existsByIdAndParticipantsId(Long eventId, Long userId);

@@ -15,5 +15,10 @@ public class TaskDto {
     private boolean completed;
     private String creator;
     private String assignedUser;
+    private Long assignedUserId;
     private Instant createdAt;
+
+    public Long getAssignedUserId() {
+        return assignedUserId;
+    }
 }

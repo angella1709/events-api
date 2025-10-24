@@ -4,6 +4,7 @@ import com.example.angella.eventsapi.entity.ChecklistTemplate;
 import com.example.angella.eventsapi.entity.Event;
 import com.example.angella.eventsapi.entity.TemplateCategory;
 import com.example.angella.eventsapi.entity.User;
+import com.example.angella.eventsapi.service.ChecklistTemplateService;
 import com.example.angella.eventsapi.service.EventService;
 import com.example.angella.eventsapi.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class AdminController {
 
     private final UserService userService;
     private final EventService eventService;
+    private final ChecklistTemplateService templateService; // ADD THIS
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {

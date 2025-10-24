@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: create-tables
+      id: create-base-tables
       author: angella
       changes:
         - createTable:
@@ -39,29 +39,6 @@ databaseChangeLog:
               - column:
                   name: avatar_image_id
                   type: bigint
-                  constraints:
-                    referencedTableName: image
-                    referencedColumnNames: id
-                    foreignKeyName: fk_user_avatar_image_id
-
-        - createTable:
-            tableName: user_roles
-            columns:
-              - column:
-                  name: user_id
-                  type: bigint
-                  constraints:
-                    nullable: false
-                    referencedTableName: usr
-                    referencedColumnNames: id
-                    foreignKeyName: fk_user_roles_user_id
-              - column:
-                  name: roles
-                  type: varchar(255)
-        - addUniqueConstraint:
-            columnNames: user_id, roles
-            constraintName: usr_role_unique
-            tableName: user_roles
 
         - createTable:
             tableName: category
@@ -84,46 +61,6 @@ databaseChangeLog:
                     unique: true
 
         - createTable:
-            tableName: user_category_subscription
-            columns:
-              - column:
-                  name: user_id
-                  type: bigint
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-                    referencedTableName: usr
-                    referencedColumnNames: id
-                    foreignKeyName: fk_user_cat_sub_user_id
-              - column:
-                  name: category_id
-                  type: bigint
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-                    referencedTableName: category
-                    referencedColumnNames: id
-                    foreignKeyName: fk_user_cat_sub_cat_id
-
-        - createTable:
-            tableName: schedule
-            columns:
-              - column:
-                  name: id
-                  type: bigserial
-                  constraints:
-                    primaryKey: true
-              - column:
-                  name: created_at
-                  type: timestamp with time zone
-              - column:
-                  name: updated_at
-                  type: timestamp with time zone
-              - column:
-                  name: description
-                  type: varchar(255)
-
-        - createTable:
             tableName: location
             columns:
               - column:
@@ -144,6 +81,54 @@ databaseChangeLog:
                   name: street
                   type: varchar(255)
 
+        - createTable:
+            tableName: schedule
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+              - column:
+                  name: description
+                  type: varchar(255)
+
+        - createTable:
+            tableName: checklist_template
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: category
+                  type: varchar(50)
+
+  - changeSet:
+      id: create-event-related-tables
+      author: angella
+      changes:
         - createTable:
             tableName: event
             columns:
@@ -176,108 +161,12 @@ databaseChangeLog:
               - column:
                   name: location_id
                   type: bigint
-                  constraints:
-                    nullable: false
-                    referencedTableName: location
-                    referencedColumnNames: id
-                    foreignKeyName: fk_event_location_id
               - column:
                   name: creator_id
                   type: bigint
-                  constraints:
-                    nullable: false
-                    referencedTableName: usr
-                    referencedColumnNames: id
-                    foreignKeyName: fk_event_creator_id
               - column:
                   name: schedule_id
                   type: bigint
-                  constraints:
-                    unique: true
-                    nullable: false
-                    referencedTableName: schedule
-                    referencedColumnNames: id
-                    foreignKeyName: fk_event_schedule_id
-
-        - createTable:
-            tableName: comment
-            columns:
-              - column:
-                  name: id
-                  type: bigserial
-                  constraints:
-                    primaryKey: true
-              - column:
-                  name: created_at
-                  type: timestamp with time zone
-              - column:
-                  name: updated_at
-                  type: timestamp with time zone
-              - column:
-                  name: text
-                  type: varchar(255)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: event_id
-                  type: bigint
-                  constraints:
-                    nullable: false
-                    referencedTableName: event
-                    referencedColumnNames: id
-                    foreignKeyName: fk_comment_event_id
-              - column:
-                  name: user_id
-                  type: bigint
-                  constraints:
-                    nullable: false
-                    referencedTableName: usr
-                    referencedColumnNames: id
-                    foreignKeyName: fk_comment_user_id
-
-        - createTable:
-            tableName: events_participants
-            columns:
-              - column:
-                  name: event_id
-                  type: bigint
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-                    referencedTableName: event
-                    referencedColumnNames: id
-                    foreignKeyName: fk_evt_part_event_id
-              - column:
-                  name: user_id
-                  type: bigint
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-                    referencedTableName: usr
-                    referencedColumnNames: id
-                    foreignKeyName: fk_evt_part_user_id
-
-        - createTable:
-            tableName: event_categories
-            columns:
-              - column:
-                  name: event_id
-                  type: bigint
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-                    referencedTableName: event
-                    referencedColumnNames: id
-                    foreignKeyName: fk_evt_cat_event_id
-              - column:
-                  name: category_id
-                  type: bigint
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-                    referencedTableName: category
-                    referencedColumnNames: id
-                    foreignKeyName: fk_evt_cat_cat_id
 
         - createTable:
             tableName: chat_message
@@ -305,125 +194,14 @@ databaseChangeLog:
               - column:
                   name: event_id
                   type: bigint
-                  constraints:
-                    nullable: false
-                    referencedTableName: event
-                    referencedColumnNames: id
-                    foreignKeyName: fk_chat_message_event_id
               - column:
                   name: user_id
                   type: bigint
-                  constraints:
-                    nullable: false
-                    referencedTableName: usr
-                    referencedColumnNames: id
-                    foreignKeyName: fk_chat_message_user_id
 
-        - createTable:
-            tableName: task
-            columns:
-              - column:
-                  name: id
-                  type: bigserial
-                  constraints:
-                    primaryKey: true
-              - column:
-                  name: created_at
-                  type: timestamp with time zone
-              - column:
-                  name: updated_at
-                  type: timestamp with time zone
-              - column:
-                  name: description
-                  type: text
-                  constraints:
-                    nullable: false
-              - column:
-                  name: completed
-                  type: boolean
-                  defaultValue: false
-              - column:
-                  name: event_id
-                  type: bigint
-                  constraints:
-                    nullable: false
-                    referencedTableName: event
-                    referencedColumnNames: id
-                    foreignKeyName: fk_task_event_id
-              - column:
-                  name: user_id
-                  type: bigint
-                  constraints:
-                    nullable: false
-                    referencedTableName: usr
-                    referencedColumnNames: id
-                    foreignKeyName: fk_task_user_id
-              - column:
-                  name: assigned_user_id
-                  type: bigint
-                  constraints:
-                    referencedTableName: usr
-                    referencedColumnNames: id
-                    foreignKeyName: fk_task_assigned_user_id
-
-        - createTable:
-            tableName: checklist_item
-            columns:
-              - column:
-                  name: id
-                  type: bigserial
-                  constraints:
-                    primaryKey: true
-              - column:
-                  name: created_at
-                  type: timestamp with time zone
-              - column:
-                  name: updated_at
-                  type: timestamp with time zone
-              - column:
-                  name: name
-                  type: varchar(255)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: description
-                  type: text
-              - column:
-                  name: quantity
-                  type: integer
-                  defaultValue: 1
-              - column:
-                  name: completed
-                  type: boolean
-                  defaultValue: false
-              - column:
-                  name: from_template
-                  type: boolean
-                  defaultValue: false
-              - column:
-                  name: event_id
-                  type: bigint
-                  constraints:
-                    nullable: false
-                    referencedTableName: event
-                    referencedColumnNames: id
-                    foreignKeyName: fk_checklist_item_event_id
-              - column:
-                  name: assigned_user_id
-                  type: bigint
-                  constraints:
-                    referencedTableName: usr
-                    referencedColumnNames: id
-                    foreignKeyName: fk_checklist_item_assigned_user_id
-              - column:
-                  name: created_by_id
-                  type: bigint
-                  constraints:
-                    nullable: false
-                    referencedTableName: usr
-                    referencedColumnNames: id
-                    foreignKeyName: fk_checklist_item_created_by_id
-
+  - changeSet:
+      id: create-image-table
+      author: angella
+      changes:
         - createTable:
             tableName: image
             columns:
@@ -464,27 +242,136 @@ databaseChangeLog:
               - column:
                   name: user_id
                   type: bigint
+              - column:
+                  name: event_id
+                  type: bigint
+              - column:
+                  name: chat_message_id
+                  type: bigint
+
+  - changeSet:
+      id: create-remaining-tables
+      author: angella
+      changes:
+        - createTable:
+            tableName: user_roles
+            columns:
+              - column:
+                  name: user_id
+                  type: bigint
+              - column:
+                  name: roles
+                  type: varchar(255)
+
+        - createTable:
+            tableName: user_category_subscription
+            columns:
+              - column:
+                  name: user_id
+                  type: bigint
                   constraints:
-                    referencedTableName: usr
-                    referencedColumnNames: id
-                    foreignKeyName: fk_image_user_id
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: category_id
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+        - createTable:
+            tableName: comment
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+              - column:
+                  name: text
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: event_id
+                  type: bigint
+              - column:
+                  name: user_id
+                  type: bigint
+
+        - createTable:
+            tableName: events_participants
+            columns:
               - column:
                   name: event_id
                   type: bigint
                   constraints:
-                    referencedTableName: event
-                    referencedColumnNames: id
-                    foreignKeyName: fk_image_event_id
+                    primaryKey: true
+                    nullable: false
               - column:
-                  name: chat_message_id
+                  name: user_id
                   type: bigint
                   constraints:
-                    referencedTableName: chat_message
-                    referencedColumnNames: id
-                    foreignKeyName: fk_image_chat_message_id
+                    primaryKey: true
+                    nullable: false
 
         - createTable:
-            tableName: checklist_template
+            tableName: event_categories
+            columns:
+              - column:
+                  name: event_id
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: category_id
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+        - createTable:
+            tableName: task
+            columns:
+              - column:
+                  name: id
+                  type: bigserial
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+              - column:
+                  name: description
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: completed
+                  type: boolean
+                  defaultValue: false
+              - column:
+                  name: event_id
+                  type: bigint
+              - column:
+                  name: user_id
+                  type: bigint
+              - column:
+                  name: assigned_user_id
+                  type: bigint
+
+        - createTable:
+            tableName: checklist_item
             columns:
               - column:
                   name: id
@@ -506,8 +393,26 @@ databaseChangeLog:
                   name: description
                   type: text
               - column:
-                  name: category
-                  type: varchar(50)
+                  name: quantity
+                  type: integer
+                  defaultValue: 1
+              - column:
+                  name: completed
+                  type: boolean
+                  defaultValue: false
+              - column:
+                  name: from_template
+                  type: boolean
+                  defaultValue: false
+              - column:
+                  name: event_id
+                  type: bigint
+              - column:
+                  name: assigned_user_id
+                  type: bigint
+              - column:
+                  name: created_by_id
+                  type: bigint
 
         - createTable:
             tableName: template_item
@@ -538,8 +443,187 @@ databaseChangeLog:
               - column:
                   name: template_id
                   type: bigint
-                  constraints:
-                    nullable: false
-                    referencedTableName: checklist_template
-                    referencedColumnNames: id
-                    foreignKeyName: fk_template_item_template_id
+
+  - changeSet:
+      id: add-constraints-and-indexes
+      author: angella
+      changes:
+        - addUniqueConstraint:
+            columnNames: user_id, roles
+            constraintName: usr_role_unique
+            tableName: user_roles
+
+        - addForeignKeyConstraint:
+            baseTableName: usr
+            baseColumnNames: avatar_image_id
+            referencedTableName: image
+            referencedColumnNames: id
+            constraintName: fk_user_avatar_image_id
+
+        - addForeignKeyConstraint:
+            baseTableName: user_roles
+            baseColumnNames: user_id
+            referencedTableName: usr
+            referencedColumnNames: id
+            constraintName: fk_user_roles_user_id
+
+        - addForeignKeyConstraint:
+            baseTableName: user_category_subscription
+            baseColumnNames: user_id
+            referencedTableName: usr
+            referencedColumnNames: id
+            constraintName: fk_user_cat_sub_user_id
+
+        - addForeignKeyConstraint:
+            baseTableName: user_category_subscription
+            baseColumnNames: category_id
+            referencedTableName: category
+            referencedColumnNames: id
+            constraintName: fk_user_cat_sub_cat_id
+
+        - addForeignKeyConstraint:
+            baseTableName: event
+            baseColumnNames: location_id
+            referencedTableName: location
+            referencedColumnNames: id
+            constraintName: fk_event_location_id
+
+        - addForeignKeyConstraint:
+            baseTableName: event
+            baseColumnNames: creator_id
+            referencedTableName: usr
+            referencedColumnNames: id
+            constraintName: fk_event_creator_id
+
+        - addForeignKeyConstraint:
+            baseTableName: event
+            baseColumnNames: schedule_id
+            referencedTableName: schedule
+            referencedColumnNames: id
+            constraintName: fk_event_schedule_id
+
+        - addForeignKeyConstraint:
+            baseTableName: chat_message
+            baseColumnNames: event_id
+            referencedTableName: event
+            referencedColumnNames: id
+            constraintName: fk_chat_message_event_id
+
+        - addForeignKeyConstraint:
+            baseTableName: chat_message
+            baseColumnNames: user_id
+            referencedTableName: usr
+            referencedColumnNames: id
+            constraintName: fk_chat_message_user_id
+
+        - addForeignKeyConstraint:
+            baseTableName: image
+            baseColumnNames: user_id
+            referencedTableName: usr
+            referencedColumnNames: id
+            constraintName: fk_image_user_id
+
+        - addForeignKeyConstraint:
+            baseTableName: image
+            baseColumnNames: event_id
+            referencedTableName: event
+            referencedColumnNames: id
+            constraintName: fk_image_event_id
+
+        - addForeignKeyConstraint:
+            baseTableName: image
+            baseColumnNames: chat_message_id
+            referencedTableName: chat_message
+            referencedColumnNames: id
+            constraintName: fk_image_chat_message_id
+
+        - addForeignKeyConstraint:
+            baseTableName: comment
+            baseColumnNames: event_id
+            referencedTableName: event
+            referencedColumnNames: id
+            constraintName: fk_comment_event_id
+
+        - addForeignKeyConstraint:
+            baseTableName: comment
+            baseColumnNames: user_id
+            referencedTableName: usr
+            referencedColumnNames: id
+            constraintName: fk_comment_user_id
+
+        - addForeignKeyConstraint:
+            baseTableName: events_participants
+            baseColumnNames: event_id
+            referencedTableName: event
+            referencedColumnNames: id
+            constraintName: fk_evt_part_event_id
+
+        - addForeignKeyConstraint:
+            baseTableName: events_participants
+            baseColumnNames: user_id
+            referencedTableName: usr
+            referencedColumnNames: id
+            constraintName: fk_evt_part_user_id
+
+        - addForeignKeyConstraint:
+            baseTableName: event_categories
+            baseColumnNames: event_id
+            referencedTableName: event
+            referencedColumnNames: id
+            constraintName: fk_evt_cat_event_id
+
+        - addForeignKeyConstraint:
+            baseTableName: event_categories
+            baseColumnNames: category_id
+            referencedTableName: category
+            referencedColumnNames: id
+            constraintName: fk_evt_cat_cat_id
+
+        - addForeignKeyConstraint:
+            baseTableName: task
+            baseColumnNames: event_id
+            referencedTableName: event
+            referencedColumnNames: id
+            constraintName: fk_task_event_id
+
+        - addForeignKeyConstraint:
+            baseTableName: task
+            baseColumnNames: user_id
+            referencedTableName: usr
+            referencedColumnNames: id
+            constraintName: fk_task_user_id
+
+        - addForeignKeyConstraint:
+            baseTableName: task
+            baseColumnNames: assigned_user_id
+            referencedTableName: usr
+            referencedColumnNames: id
+            constraintName: fk_task_assigned_user_id
+
+        - addForeignKeyConstraint:
+            baseTableName: checklist_item
+            baseColumnNames: event_id
+            referencedTableName: event
+            referencedColumnNames: id
+            constraintName: fk_checklist_item_event_id
+
+        - addForeignKeyConstraint:
+            baseTableName: checklist_item
+            baseColumnNames: assigned_user_id
+            referencedTableName: usr
+            referencedColumnNames: id
+            constraintName: fk_checklist_item_assigned_user_id
+
+        - addForeignKeyConstraint:
+            baseTableName: checklist_item
+            baseColumnNames: created_by_id
+            referencedTableName: usr
+            referencedColumnNames: id
+            constraintName: fk_checklist_item_created_by_id
+
+        - addForeignKeyConstraint:
+            baseTableName: template_item
+            baseColumnNames: template_id
+            referencedTableName: checklist_template
+            referencedColumnNames: id
+            constraintName: fk_template_item_template_id

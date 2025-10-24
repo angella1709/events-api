@@ -3,8 +3,12 @@ package com.example.angella.eventsapi.web.controller;
 import com.example.angella.eventsapi.entity.Event;
 import com.example.angella.eventsapi.entity.User;
 import com.example.angella.eventsapi.mapper.EventMapper;
+import com.example.angella.eventsapi.repository.EventRepository; // ADD THIS
 import com.example.angella.eventsapi.service.CategoryService;
+import com.example.angella.eventsapi.service.ChecklistService; // ADD THIS
+import com.example.angella.eventsapi.service.CommentService; // ADD THIS
 import com.example.angella.eventsapi.service.EventService;
+import com.example.angella.eventsapi.service.TaskService; // ADD THIS
 import com.example.angella.eventsapi.service.UserService;
 import com.example.angella.eventsapi.web.dto.CreateEventRequest;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +33,10 @@ public class WebController {
     private final CategoryService categoryService;
     private final UserService userService;
     private final EventMapper eventMapper;
+    private final EventRepository eventRepository; // ADD THIS
+    private final TaskService taskService; // ADD THIS
+    private final ChecklistService checklistService; // ADD THIS
+    private final CommentService commentService; // ADD THIS
 
     @GetMapping("/")
     public String home(Model model, Authentication authentication) {
@@ -113,18 +121,6 @@ public class WebController {
         }
     }
 
-    @GetMapping("/event/{id}")
-    public String eventDetail(@PathVariable Long id, Model model) {
-        try {
-            var event = eventService.getByIdWithRelations(id);
-            model.addAttribute("event", event);
-            return "events/detail";
-        } catch (Exception e) {
-            log.error("Error loading event detail page for id: {}", id, e);
-            model.addAttribute("error", "Мероприятие не найдено");
-            return "error/404";
-        }
-    }
 
     @GetMapping("/categories")
     public String categories(Model model) {
