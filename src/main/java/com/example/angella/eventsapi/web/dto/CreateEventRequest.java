@@ -9,7 +9,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
 
 @Data
@@ -44,10 +46,22 @@ public class CreateEventRequest {
     private Long creatorId;
 
     public Instant getStartTimeAsInstant() {
-        return startTime != null ? startTime.atZone(ZoneId.systemDefault()).toInstant() : null;
+        if (startTime == null || startTime.isEmpty()) {
+            return null;
+        }
+        // Добавляем секунды :00 если их нет
+        String timeWithSeconds = startTime.length() == 16 ? startTime + ":00" : startTime;
+        LocalDateTime localDateTime = LocalDateTime.parse(timeWithSeconds, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        return localDateTime.atZone(ZoneId.systemDefault()).toInstant();
     }
 
     public Instant getEndTimeAsInstant() {
-        return endTime != null ? endTime.atZone(ZoneId.systemDefault()).toInstant() : null;
+        if (endTime == null || endTime.isEmpty()) {
+            return null;
+        }
+        // Добавляем секунды :00 если их нет
+        String timeWithSeconds = endTime.length() == 16 ? endTime + ":00" : endTime;
+        LocalDateTime localDateTime = LocalDateTime.parse(timeWithSeconds, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        return localDateTime.atZone(ZoneId.systemDefault()).toInstant();
     }
 }
