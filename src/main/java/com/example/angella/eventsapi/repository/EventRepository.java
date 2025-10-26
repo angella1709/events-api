@@ -33,13 +33,13 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator"})
     Optional<Event> findById(Long id);
 
-    @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator"})
-    @Query("SELECT e FROM Event e ORDER BY e.startTime ASC")
-    List<Event> findAllOrderByStartTimeAsc();
-
-    @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator"})
+    @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator", "participants"})
     @Query("SELECT e FROM Event e ORDER BY e.startTime DESC")
     List<Event> findAllOrderByStartTimeDesc();
+
+    @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator", "participants"})
+    @Query("SELECT e FROM Event e ORDER BY e.startTime ASC")
+    List<Event> findAllOrderByStartTimeAsc();
 
     @EntityGraph(attributePaths = {"categories", "location", "schedule", "creator"})
     @Query("SELECT e FROM Event e JOIN e.categories c WHERE c IN :categories ORDER BY e.startTime")

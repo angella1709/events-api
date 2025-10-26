@@ -1,6 +1,5 @@
 package com.example.angella.eventsapi.web.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -19,32 +18,31 @@ import java.util.Set;
 @AllArgsConstructor
 public class CreateEventRequest {
 
-    @NotBlank(message = "Name must be set!")
+    @NotBlank(message = "Название мероприятия должно быть указано!")
     private String name;
 
-    @NotNull(message = "Start time must be set!")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "UTC")
-    private Instant startTime;
+    @NotBlank(message = "Время начала должно быть указано!")
+    private String startTime;  // ДОЛЖНО БЫТЬ String!
 
-    @NotNull(message = "End time must be set!")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "UTC")
-    private Instant endTime;
+    @NotBlank(message = "Время окончания должно быть указано!")
+    private String endTime;    // ДОЛЖНО БЫТЬ String!
 
-    @NotEmpty(message = "Categories must not be empty!")
-    private Set<@NotBlank(message = "Category must not be blank!") String> categories;
+    @NotEmpty(message = "Выберите хотя бы одну категорию!")
+    private Set<@NotBlank(message = "Категория не может быть пустой!") String> categories;
 
-    @NotBlank(message = "Schedule must not be blank!")
+    @NotBlank(message = "Описание мероприятия должно быть указано!")
     private String schedule;
 
-    @NotBlank(message = "City must not be blank!")
+    @NotBlank(message = "Город должен быть указан!")
     private String cityLocation;
 
-    @NotBlank(message = "Street must be not blank!")
+    @NotBlank(message = "Улица должна быть указана!")
     private String streetLocation;
 
-    @NotNull(message = "Id of creator must be set!")
+    @NotNull(message = "ID создателя должен быть указан!")
     private Long creatorId;
 
+    // Методы для преобразования в Instant с секундами = 00
     public Instant getStartTimeAsInstant() {
         if (startTime == null || startTime.isEmpty()) {
             return null;

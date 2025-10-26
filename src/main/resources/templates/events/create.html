@@ -215,6 +215,21 @@
                     alert('Пожалуйста, выберите или добавьте хотя бы одну категорию');
                     return;
                 }
+
+                const startTimeInput = document.getElementById('startTime');
+                const endTimeInput = document.getElementById('endTime');
+
+                // Формат datetime-local возвращает "YYYY-MM-DDTHH:MM"
+                // Добавляем секунды :00 чтобы получить "YYYY-MM-DDTHH:MM:00"
+                if (startTimeInput.value && startTimeInput.value.length === 16) {
+                    startTimeInput.value = startTimeInput.value + ':00';
+                }
+                if (endTimeInput.value && endTimeInput.value.length === 16) {
+                    endTimeInput.value = endTimeInput.value + ':00';
+                }
+
+                console.log('Отправляем время начала:', startTimeInput.value);
+                console.log('Отправляем время окончания:', endTimeInput.value);
             });
         });
     </script>
