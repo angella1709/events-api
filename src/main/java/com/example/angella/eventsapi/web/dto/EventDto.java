@@ -23,7 +23,7 @@ public class EventDto {
 
     private Set<CategoryDto> categories = new HashSet<>();
 
-    private ScheduleDto schedule;
+    private String description;
 
     private LocationDto location;
 

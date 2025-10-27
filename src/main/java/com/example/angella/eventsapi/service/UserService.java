@@ -62,10 +62,6 @@ public class UserService {
                 ));
     }
 
-    public Set<String> getEmailsBySubscriptions(Collection<Long> categoriesId) {
-        return userRepository.getEmailsBySubscriptions(categoriesId);
-    }
-
     @PreAuthorize("hasRole('ADMIN')")
     public List<User> findAllUsers() {
         return userRepository.findAll();

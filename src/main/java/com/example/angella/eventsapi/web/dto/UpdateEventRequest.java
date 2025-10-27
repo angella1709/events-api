@@ -24,7 +24,7 @@ public class UpdateEventRequest {
 
     private Set<@NotBlank(message = "Category must not be blank!") String> categories;
 
-    private String schedule;
+    private String description;
 
     private String city;
 

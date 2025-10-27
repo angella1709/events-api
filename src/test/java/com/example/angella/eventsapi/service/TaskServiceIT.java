@@ -4,7 +4,6 @@ import com.example.angella.eventsapi.ServiceIntegrationTest;
 import com.example.angella.eventsapi.entity.*;
 import com.example.angella.eventsapi.exception.AccessDeniedException;
 import com.example.angella.eventsapi.repository.LocationRepository;
-import com.example.angella.eventsapi.repository.ScheduleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

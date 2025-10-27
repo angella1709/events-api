@@ -6,7 +6,6 @@ import com.example.angella.eventsapi.exception.EntityNotFoundException;
 import com.example.angella.eventsapi.model.EventFilterModel;
 import com.example.angella.eventsapi.repository.EventRepository;
 import com.example.angella.eventsapi.repository.LocationRepository;
-import com.example.angella.eventsapi.repository.ScheduleRepository;
 import com.example.angella.eventsapi.repository.specification.EventSpecification;
 import com.example.angella.eventsapi.web.dto.UpdateEventRequest;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import java.text.MessageFormat;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,7 +27,6 @@ import java.util.stream.Collectors;
 public class EventService {
     private final EventRepository eventRepository;
     private final CategoryService categoryService;
-    private final ScheduleRepository scheduleRepository;
     private final LocationRepository locationRepository;
     private final UserService userService;
     private final ApplicationEventPublisher eventPublisher;
@@ -62,7 +59,6 @@ public class EventService {
     @Transactional
     public Event create(Event event, Long creatorId) {
         event.setCategories(categoryService.upsertCategories(event.getCategories()));
-        event.setSchedule(scheduleRepository.save(event.getSchedule()));
         var location = locationRepository.findByCityAndStreet(
                         event.getLocation().getCity(),
                         event.getLocation().getStreet())
@@ -94,17 +90,6 @@ public class EventService {
         }
         if (request.getEndTime() != null) {
             existingEvent.setEndTime(request.getEndTime());
-        }
-
-        // Обновление расписания
-        if (StringUtils.isNotBlank(request.getSchedule())) {
-            Schedule schedule = existingEvent.getSchedule();
-            if (schedule == null) {
-                schedule = new Schedule();
-                existingEvent.setSchedule(schedule);
-            }
-            schedule.setDescription(request.getSchedule());
-            scheduleRepository.save(schedule);
         }
 
         // Обновление категорий

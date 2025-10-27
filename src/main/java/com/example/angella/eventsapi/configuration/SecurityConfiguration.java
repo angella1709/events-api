@@ -50,6 +50,9 @@ public class SecurityConfiguration {
                                 // Публичные API endpoints
                                 .requestMatchers("/api/v1/public/**").permitAll()
 
+                                // API endpoints (должны быть после публичных)
+                                .requestMatchers("/api/v1/**").authenticated()
+
                                 // Публичные страницы
                                 .requestMatchers("/", "/home", "/events", "/event/details/**",
                                         "/categories", "/about", "/contact",
@@ -61,8 +64,6 @@ public class SecurityConfiguration {
                                 // Аутентифицированные страницы
                                 .requestMatchers("/profile", "/chats/**").authenticated()
 
-                                // API endpoints (должны быть после публичных)
-                                .requestMatchers("/api/v1/**").authenticated()
 
                                 // Admin pages
                                 .requestMatchers("/admin/**", "/api/v1/admin/**").hasRole("ADMIN")

@@ -264,22 +264,6 @@ databaseChangeLog:
                   type: varchar(255)
 
         - createTable:
-            tableName: user_category_subscription
-            columns:
-              - column:
-                  name: user_id
-                  type: bigint
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-              - column:
-                  name: category_id
-                  type: bigint
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-
-        - createTable:
             tableName: comment
             columns:
               - column:
@@ -466,20 +450,6 @@ databaseChangeLog:
             referencedTableName: usr
             referencedColumnNames: id
             constraintName: fk_user_roles_user_id
-
-        - addForeignKeyConstraint:
-            baseTableName: user_category_subscription
-            baseColumnNames: user_id
-            referencedTableName: usr
-            referencedColumnNames: id
-            constraintName: fk_user_cat_sub_user_id
-
-        - addForeignKeyConstraint:
-            baseTableName: user_category_subscription
-            baseColumnNames: category_id
-            referencedTableName: category
-            referencedColumnNames: id
-            constraintName: fk_user_cat_sub_cat_id
 
         - addForeignKeyConstraint:
             baseTableName: event

@@ -231,7 +231,7 @@ public class WebController {
         }
     }
 
-    // ИСПРАВЛЕННЫЙ МЕТОД: Детали события с явным путем
+    // Детали события с явным путем
     @GetMapping("/event/details/{id}")
     public String eventDetail(@PathVariable Long id, Model model,
                               @AuthenticationPrincipal UserDetails userDetails) {

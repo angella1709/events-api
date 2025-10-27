@@ -198,16 +198,6 @@ footer.bg-dark {
     border-color: #8facbc;
 }
 
-.form-check-label {
-    cursor: pointer;
-    transition: color 0.3s ease;
-}
-
-.form-check-input:checked + .form-check-label {
-    color: #8fbc8f;
-    font-weight: 500;
-}
-
 /* Счетчик символов */
 .form-text {
     font-size: 0.875rem;
@@ -315,18 +305,58 @@ footer.bg-dark {
     margin-left: 0.25rem;
 }
 
-/* Улучшение внешнего вида формы */
-.category-checkbox:checked + .form-check-label {
-    color: var(--primary);
-    font-weight: 500;
-}
-
 /* Анимация для новых элементов */
 #newCategoriesList .badge {
     animation: fadeIn 0.3s ease-in;
 }
 
+footer {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* Стили для формы загрузки изображения */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 0.5rem;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #c3e0e6;
+    color: white;
+}
+
+#imagePreview {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px dashed #ddd;
+    border-radius: 4px;
+}
+
+#preview {
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }

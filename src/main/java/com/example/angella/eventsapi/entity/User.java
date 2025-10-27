@@ -43,26 +43,11 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Set<Role> roles = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(name = "user_category_subscription",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "category_id"))
-    private Set<Category> subscribedCategories = new HashSet<>();
-
     public void addRole(Role role) {
         if (this.roles == null) {
             this.roles = new HashSet<>();
         }
         roles.add(role);
-    }
-
-
-    public void addSubscription(Category category) {
-        subscribedCategories.add(category);
-    }
-
-    public boolean removeCategorySubscription(Long categoryId) {
-        return subscribedCategories.removeIf(it -> it.getId().equals(categoryId));
     }
 
     public boolean hasRole(Role role) {
