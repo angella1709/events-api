@@ -16,7 +16,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+
 import java.text.MessageFormat;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,31 +35,43 @@ public class EventService {
     private final ImageService imageService;
     private final ApplicationEventPublisher eventPublisher;
 
+    @Transactional(readOnly = true)
     public List<Event> findAll() {
-        return eventRepository.findAll();
+        List<Event> events = eventRepository.findAll();
+        // Инициализируем ленивые коллекции
+        events.forEach(this::initializeLazyCollections);
+        return events;
     }
 
     @Transactional(readOnly = true)
     public Page<Event> filter(EventFilterModel filterModel) {
-        return eventRepository.findAll(
+        Page<Event> page = eventRepository.findAll(
                 EventSpecification.withFilter(filterModel),
                 filterModel.getPage().toPageRequest()
         );
+        // Инициализируем ленивые коллекции для каждой страницы
+        page.getContent().forEach(this::initializeLazyCollections);
+        return page;
     }
 
     @Transactional(readOnly = true)
     public Event getById(Long eventId) {
-        return eventRepository.findById(eventId).orElseThrow(() ->
+        Event event = eventRepository.findById(eventId).orElseThrow(() ->
                 new EntityNotFoundException(
                         MessageFormat.format("Event with id {0} not found!", eventId)
                 ));
+        initializeLazyCollections(event);
+        return event;
     }
 
     @Transactional(readOnly = true)
     public Event getByIdWithRelations(Long id) {
-        return eventRepository.findByIdWithRelations(id)
+        Event event = eventRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new EntityNotFoundException("Event not found"));
+        initializeLazyCollections(event);
+        return event;
     }
+
     @Transactional
     public Event create(Event event, Long creatorId) {
         event.setCategories(categoryService.upsertCategories(event.getCategories()));
@@ -70,7 +84,7 @@ public class EventService {
         event.setCreator(creator);
         event.addParticipant(creator);
         Event savedEvent = eventRepository.save(event);
-
+        initializeLazyCollections(savedEvent);
         return savedEvent;
     }
 
@@ -120,7 +134,7 @@ public class EventService {
         }
 
         Event updatedEvent = eventRepository.save(existingEvent);
-
+        initializeLazyCollections(updatedEvent);
         return updatedEvent;
     }
 
@@ -202,11 +216,10 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public List<Event> findAllWithImages() {
-        // Используем репозиторий с EntityGraph для загрузки всех необходимых отношений
         List<Event> events = eventRepository.findAll();
-
-        // Загружаем изображения для каждого события
+        // Инициализируем ленивые коллекции и загружаем изображения
         events.forEach(event -> {
+            initializeLazyCollections(event);
             List<Image> images = imageService.getEventImages(event.getId());
             event.setImages(images != null ? new HashSet<>(images) : new HashSet<>());
         });
@@ -217,30 +230,107 @@ public class EventService {
     public List<Event> findFeaturedEvents() {
         List<Event> events = eventRepository.findAllOrderByStartTimeDesc();
 
-        // Загружаем изображения для каждого события
-        events.forEach(event -> {
+        // Фильтруем только будущие мероприятия
+        Instant now = Instant.now();
+        List<Event> futureEvents = events.stream()
+                .filter(event -> event.getStartTime().isAfter(now))
+                .collect(Collectors.toList());
+
+        // Инициализируем ленивые коллекции и загружаем изображения
+        futureEvents.forEach(event -> {
+            initializeLazyCollections(event);
             List<Image> images = imageService.getEventImages(event.getId());
             event.setImages(images != null ? new HashSet<>(images) : new HashSet<>());
         });
 
-        return events.size() > 6 ? events.subList(0, 6) : events;
+        return futureEvents.size() > 6 ? futureEvents.subList(0, 6) : futureEvents;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Event> findUpcomingEvents() {
+        List<Event> events = eventRepository.findAllOrderByStartTimeAsc();
+
+        // Фильтруем только будущие мероприятия
+        Instant now = Instant.now();
+        List<Event> futureEvents = events.stream()
+                .filter(event -> event.getStartTime().isAfter(now))
+                .collect(Collectors.toList());
+
+        // Инициализируем ленивые коллекции и загружаем изображения
+        futureEvents.forEach(event -> {
+            initializeLazyCollections(event);
+            List<Image> images = imageService.getEventImages(event.getId());
+            event.setImages(images != null ? new HashSet<>(images) : new HashSet<>());
+        });
+
+        return futureEvents.size() > 6 ? futureEvents.subList(0, 6) : futureEvents;
     }
 
     @Transactional(readOnly = true)
     public List<Event> findUserEventsWithImages(Long userId) {
         User user = userService.findById(userId);
-        // Получаем события с участниками
-        List<Event> events = eventRepository.findAll().stream()
+
+        // Получаем все события и фильтруем по участникам
+        List<Event> allEvents = eventRepository.findAll();
+        Instant now = Instant.now();
+
+        List<Event> userEvents = allEvents.stream()
                 .filter(event -> event.getParticipants().stream()
                         .anyMatch(participant -> participant.getId().equals(userId)))
+                .filter(event -> event.getStartTime().isAfter(now)) // Только будущие
                 .collect(Collectors.toList());
 
-        // Загружаем изображения для каждого события
-        events.forEach(event -> {
+        // Инициализируем ленивые коллекции и загружаем изображения
+        userEvents.forEach(event -> {
+            initializeLazyCollections(event);
             List<Image> images = imageService.getEventImages(event.getId());
             event.setImages(images != null ? new HashSet<>(images) : new HashSet<>());
         });
-        return events;
+
+        return userEvents;
     }
 
+    @Transactional(readOnly = true)
+    public List<Event> findAllFutureEvents() {
+        List<Event> events = eventRepository.findAll();
+
+        // Фильтруем только будущие мероприятия
+        Instant now = Instant.now();
+        List<Event> futureEvents = events.stream()
+                .filter(event -> event.getStartTime().isAfter(now))
+                .collect(Collectors.toList());
+
+        // Инициализируем ленивые коллекции и загружаем изображения
+        futureEvents.forEach(event -> {
+            initializeLazyCollections(event);
+            List<Image> images = imageService.getEventImages(event.getId());
+            event.setImages(images != null ? new HashSet<>(images) : new HashSet<>());
+        });
+
+        return futureEvents;
+    }
+
+    // Вспомогательный метод для инициализации ленивых коллекций
+    private void initializeLazyCollections(Event event) {
+        // Инициализируем participants
+        if (event.getParticipants() != null) {
+            event.getParticipants().size(); // Это загрузит коллекцию
+        }
+        // Инициализируем categories
+        if (event.getCategories() != null) {
+            event.getCategories().size();
+        }
+        // Инициализируем comments
+        if (event.getComments() != null) {
+            event.getComments().size();
+        }
+        // Инициализируем chatMessages
+        if (event.getChatMessages() != null) {
+            event.getChatMessages().size();
+        }
+        // Инициализируем tasks
+        if (event.getTasks() != null) {
+            event.getTasks().size();
+        }
+    }
 }

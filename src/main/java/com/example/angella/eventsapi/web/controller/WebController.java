@@ -38,17 +38,12 @@ public class WebController {
     @GetMapping("/")
     public String home(Model model, Authentication authentication) {
         try {
-            // Получаем все мероприятия с изображениями
-            var events = eventService.findAllWithImages();
-            // Берем последние 6 мероприятий
-            var featuredEvents = events.stream()
-                    .sorted((e1, e2) -> e2.getCreatedAt().compareTo(e1.getCreatedAt()))
-                    .limit(6)
-                    .collect(Collectors.toList());
+            // Получаем ближайшие мероприятия (только будущие)
+            var featuredEvents = eventService.findUpcomingEvents();
 
             // Подготавливаем статистику
             Map<String, Long> stats = new HashMap<>();
-            stats.put("eventsCount", (long) events.size());
+            stats.put("eventsCount", (long) eventService.findAll().size());
             stats.put("usersCount", (long) userService.findAllUsers().size());
             stats.put("categoriesCount", (long) categoryService.findAll().size());
             stats.put("citiesCount", (long) eventService.getAllCities().size());
@@ -77,7 +72,8 @@ public class WebController {
                          @RequestParam(required = false) String date,
                          @RequestParam(required = false, defaultValue = "newest") String sort) {
         try {
-            List<Event> events = eventService.findAllWithImages();
+            // Получаем только будущие мероприятия
+            List<Event> events = eventService.findAllFutureEvents();
 
             // Применяем фильтры
             if (search != null && !search.isEmpty()) {

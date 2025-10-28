@@ -11,26 +11,27 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecificationExecutor<Event> {
 
-    @EntityGraph(attributePaths = {"creator", "categories", "description", "location","creator.roles"})
+    @EntityGraph(attributePaths = {"creator", "categories", "description", "location","creator.roles", "participants"})
     @Query("SELECT e FROM Event e WHERE e.id = :id")
     Optional<Event> findByIdWithRelations(@Param("id") Long id);
 
     @Override
-    @EntityGraph(attributePaths = {"categories", "location", "description", "creator"})
+    @EntityGraph(attributePaths = {"categories", "location", "description", "creator", "participants"})
     Page<Event> findAll(Specification<Event> spec, Pageable pageable);
 
     @Override
-    @EntityGraph(attributePaths = {"categories", "location", "description", "creator"})
+    @EntityGraph(attributePaths = {"categories", "location", "description", "creator", "participants"})
     List<Event> findAll();
 
     @Override
-    @EntityGraph(attributePaths = {"categories", "location", "description", "creator"})
+    @EntityGraph(attributePaths = {"categories", "location", "description", "creator", "participants"})
     Optional<Event> findById(Long id);
 
     @EntityGraph(attributePaths = {"categories", "location", "description", "creator", "participants"})
@@ -41,8 +42,11 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     @Query("SELECT e FROM Event e ORDER BY e.startTime ASC")
     List<Event> findAllOrderByStartTimeAsc();
 
+    @EntityGraph(attributePaths = {"categories", "location", "description", "creator", "participants"})
+    @Query("SELECT e FROM Event e WHERE e.startTime > :currentTime ORDER BY e.startTime ASC")
+    List<Event> findUpcomingEvents(@Param("currentTime") Instant currentTime);
 
-    @EntityGraph(attributePaths = {"categories", "location", "description", "creator"})
+    @EntityGraph(attributePaths = {"categories", "location", "description", "creator", "participants"})
     @Query("SELECT e FROM Event e JOIN e.categories c WHERE c IN :categories ORDER BY e.startTime")
     List<Event> findByCategoriesOrderByStartTime(@Param("categories") Set<Category> categories);
 
