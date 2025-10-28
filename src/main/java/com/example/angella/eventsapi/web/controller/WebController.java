@@ -17,10 +17,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 @RequiredArgsConstructor
@@ -40,21 +38,25 @@ public class WebController {
     @GetMapping("/")
     public String home(Model model, Authentication authentication) {
         try {
-            // Get featured events (first 6 events)
-            var events = eventService.findAll();
-            var featuredEvents = events.size() > 6 ? events.subList(0, 6) : events;
+            // Получаем все мероприятия с изображениями
+            var events = eventService.findAllWithImages();
+            // Берем последние 6 мероприятий
+            var featuredEvents = events.stream()
+                    .sorted((e1, e2) -> e2.getCreatedAt().compareTo(e1.getCreatedAt()))
+                    .limit(6)
+                    .collect(Collectors.toList());
 
-            // Prepare statistics
+            // Подготавливаем статистику
             Map<String, Long> stats = new HashMap<>();
             stats.put("eventsCount", (long) events.size());
-            stats.put("usersCount", 500L); // Mock data, replace with actual count
+            stats.put("usersCount", (long) userService.findAllUsers().size());
             stats.put("categoriesCount", (long) categoryService.findAll().size());
-            stats.put("citiesCount", 15L); // Mock data
+            stats.put("citiesCount", (long) eventService.getAllCities().size());
 
             model.addAttribute("featuredEvents", featuredEvents);
             model.addAttribute("stats", stats);
 
-            // Add authentication info
+            // Добавляем информацию об аутентификации
             if (authentication != null && authentication.isAuthenticated()) {
                 model.addAttribute("currentUser", authentication.getName());
             }
@@ -75,37 +77,33 @@ public class WebController {
                          @RequestParam(required = false) String date,
                          @RequestParam(required = false, defaultValue = "newest") String sort) {
         try {
-            List<Event> events;
-
-            // Сортировка
-            switch (sort) {
-                case "oldest":
-                    events = eventRepository.findAllOrderByStartTimeAsc();
-                    break;
-                case "newest":
-                default:
-                    events = eventRepository.findAllOrderByStartTimeDesc();
-                    break;
-            }
+            List<Event> events = eventService.findAllWithImages();
 
             // Применяем фильтры
             if (search != null && !search.isEmpty()) {
                 events = events.stream()
                         .filter(event -> event.getName().toLowerCase().contains(search.toLowerCase()))
-                        .toList();
+                        .collect(Collectors.toList());
             }
 
             if (categoryId != null) {
                 events = events.stream()
                         .filter(event -> event.getCategories().stream()
                                 .anyMatch(category -> category.getId().equals(categoryId)))
-                        .toList();
+                        .collect(Collectors.toList());
             }
 
             if (city != null && !city.isEmpty()) {
                 events = events.stream()
                         .filter(event -> event.getLocation().getCity().equalsIgnoreCase(city))
-                        .toList();
+                        .collect(Collectors.toList());
+            }
+
+            // Сортировка
+            if ("oldest".equals(sort)) {
+                events.sort(Comparator.comparing(Event::getStartTime));
+            } else {
+                events.sort(Comparator.comparing(Event::getStartTime).reversed());
             }
 
             // Получаем список уникальных городов для фильтра
@@ -125,6 +123,31 @@ public class WebController {
             log.error("Error loading events page", e);
             model.addAttribute("error", "Не удалось загрузить список мероприятий");
             return "events/list";
+        }
+    }
+
+    @GetMapping("/my-events")
+    public String myEvents(Model model, Authentication authentication) {
+        if (authentication == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            User user = userService.findByUsername(authentication.getName());
+            List<Event> events = eventService.findUserEventsWithImages(user.getId());
+
+            // Сортируем по дате (новые сначала)
+            events.sort(Comparator.comparing(Event::getStartTime).reversed());
+
+            model.addAttribute("events", events);
+            model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("cities", eventService.getAllCities());
+
+            return "events/my-events";
+        } catch (Exception e) {
+            log.error("Error loading my events page", e);
+            model.addAttribute("error", "Не удалось загрузить ваши мероприятия");
+            return "events/my-events";
         }
     }
 

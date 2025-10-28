@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import java.text.MessageFormat;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -198,4 +199,48 @@ public class EventService {
         List<Image> images = imageService.getEventImages(eventId);
         return images.isEmpty() ? null : images.get(0);
     }
+
+    @Transactional(readOnly = true)
+    public List<Event> findAllWithImages() {
+        // Используем репозиторий с EntityGraph для загрузки всех необходимых отношений
+        List<Event> events = eventRepository.findAll();
+
+        // Загружаем изображения для каждого события
+        events.forEach(event -> {
+            List<Image> images = imageService.getEventImages(event.getId());
+            event.setImages(images != null ? new HashSet<>(images) : new HashSet<>());
+        });
+        return events;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Event> findFeaturedEvents() {
+        List<Event> events = eventRepository.findAllOrderByStartTimeDesc();
+
+        // Загружаем изображения для каждого события
+        events.forEach(event -> {
+            List<Image> images = imageService.getEventImages(event.getId());
+            event.setImages(images != null ? new HashSet<>(images) : new HashSet<>());
+        });
+
+        return events.size() > 6 ? events.subList(0, 6) : events;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Event> findUserEventsWithImages(Long userId) {
+        User user = userService.findById(userId);
+        // Получаем события с участниками
+        List<Event> events = eventRepository.findAll().stream()
+                .filter(event -> event.getParticipants().stream()
+                        .anyMatch(participant -> participant.getId().equals(userId)))
+                .collect(Collectors.toList());
+
+        // Загружаем изображения для каждого события
+        events.forEach(event -> {
+            List<Image> images = imageService.getEventImages(event.getId());
+            event.setImages(images != null ? new HashSet<>(images) : new HashSet<>());
+        });
+        return events;
+    }
+
 }

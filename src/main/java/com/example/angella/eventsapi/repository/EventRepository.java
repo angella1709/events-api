@@ -41,6 +41,7 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     @Query("SELECT e FROM Event e ORDER BY e.startTime ASC")
     List<Event> findAllOrderByStartTimeAsc();
 
+
     @EntityGraph(attributePaths = {"categories", "location", "description", "creator"})
     @Query("SELECT e FROM Event e JOIN e.categories c WHERE c IN :categories ORDER BY e.startTime")
     List<Event> findByCategoriesOrderByStartTime(@Param("categories") Set<Category> categories);
