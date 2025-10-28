@@ -51,10 +51,28 @@ class EventServiceIT extends ServiceIntegrationTest {
         assertNotNull(savedEvent.getId());
         // - что название события корректно
         assertEquals("Test Event", savedEvent.getName());
+        // - что описание события корректно
+        assertEquals("Test Event Description", savedEvent.getDescription());
         // - что создатель события соответствует тестовому пользователю
         assertEquals(testUser.getId(), savedEvent.getCreator().getId());
         // - что событие имеет одну категорию
         assertEquals(1, savedEvent.getCategories().size());
+    }
+
+    @Test
+    void updateEvent_ShouldUpdateDescription() {
+        // Создание тестового события
+        Event event = createTestEvent();
+
+        // Подготовка запроса на обновление
+        UpdateEventRequest updateRequest = new UpdateEventRequest();
+        updateRequest.setDescription("Updated Event Description");
+
+        // Обновление события
+        Event updatedEvent = eventService.updateEvent(event.getId(), updateRequest, testUser.getId());
+
+        // Проверка, что описание обновилось
+        assertEquals("Updated Event Description", updatedEvent.getDescription());
     }
 
     @Test
@@ -84,11 +102,25 @@ class EventServiceIT extends ServiceIntegrationTest {
         // Подготовка запроса на обновление
         UpdateEventRequest updateRequest = new UpdateEventRequest();
         updateRequest.setName("Updated Name");
+        updateRequest.setDescription("Updated Description");
 
         // Проверка, что при попытке обновления не создателем
         // будет выброшено исключение AccessDeniedException
         assertThrows(AccessDeniedException.class, () ->
                 eventService.updateEvent(event.getId(), updateRequest, anotherUser.getId()));
+    }
+
+    @Test
+    void createEvent_ShouldPersistDescription() {
+        // Создание события с описанием
+        Event event = buildTestEvent();
+        event.setDescription("Detailed event description with schedule information");
+
+        Event savedEvent = eventService.create(event, testUser.getId());
+
+        // Проверка, что описание сохранилось
+        assertNotNull(savedEvent.getDescription());
+        assertEquals("Detailed event description with schedule information", savedEvent.getDescription());
     }
 
     // Вспомогательный метод для создания тестового события (уже сохраненного в БД)
@@ -101,6 +133,7 @@ class EventServiceIT extends ServiceIntegrationTest {
     private Event buildTestEvent() {
         Event event = new Event();
         event.setName("Test Event");
+        event.setDescription("Test Event Description"); // ДОБАВЛЕНО поле description
         event.setStartTime(Instant.now().plusSeconds(3600));
         event.setEndTime(Instant.now().plusSeconds(7200));
         event.setCategories(Set.of(testCategory));
@@ -109,10 +142,6 @@ class EventServiceIT extends ServiceIntegrationTest {
         location.setCity("Test City");
         location.setStreet("Test Street");
         event.setLocation(location);
-
-        Schedule schedule = new Schedule();
-        schedule.setDescription("Test Schedule");
-        event.setSchedule(schedule);
 
         event.setCreator(testUser);
         return event;

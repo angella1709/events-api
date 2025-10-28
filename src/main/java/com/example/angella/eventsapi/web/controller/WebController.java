@@ -1,6 +1,7 @@
 package com.example.angella.eventsapi.web.controller;
 
 import com.example.angella.eventsapi.entity.Event;
+import com.example.angella.eventsapi.entity.Image;
 import com.example.angella.eventsapi.entity.User;
 import com.example.angella.eventsapi.mapper.EventMapper;
 import com.example.angella.eventsapi.repository.EventRepository;
@@ -70,6 +71,7 @@ public class WebController {
     public String events(Model model,
                          @RequestParam(required = false) String search,
                          @RequestParam(required = false) Long categoryId,
+                         @RequestParam(required = false) String city,
                          @RequestParam(required = false) String date,
                          @RequestParam(required = false, defaultValue = "newest") String sort) {
         try {
@@ -79,10 +81,6 @@ public class WebController {
             switch (sort) {
                 case "oldest":
                     events = eventRepository.findAllOrderByStartTimeAsc();
-                    break;
-                case "popular":
-                    // Можно добавить логику для популярности
-                    events = eventService.findAll();
                     break;
                 case "newest":
                 default:
@@ -104,10 +102,21 @@ public class WebController {
                         .toList();
             }
 
+            if (city != null && !city.isEmpty()) {
+                events = events.stream()
+                        .filter(event -> event.getLocation().getCity().equalsIgnoreCase(city))
+                        .toList();
+            }
+
+            // Получаем список уникальных городов для фильтра
+            List<String> cities = eventService.getAllCities();
+
             model.addAttribute("events", events);
             model.addAttribute("categories", categoryService.findAll());
+            model.addAttribute("cities", cities);
             model.addAttribute("searchTerm", search);
             model.addAttribute("selectedCategory", categoryId);
+            model.addAttribute("selectedCity", city);
             model.addAttribute("selectedDate", date);
             model.addAttribute("selectedSort", sort);
 
@@ -246,12 +255,18 @@ public class WebController {
                 isCreator = event.getCreator().getId().equals(currentUser.getId());
             }
 
+            // Получаем изображения мероприятия
+            List<Image> eventImages = eventService.getEventImages(id);
+            Image mainImage = eventService.getMainEventImage(id);
+
             model.addAttribute("event", event);
             model.addAttribute("isParticipant", isParticipant);
             model.addAttribute("isCreator", isCreator);
             model.addAttribute("tasks", taskService.getTasksForEvent(id));
             model.addAttribute("checklist", checklistService.getChecklistForEvent(id));
             model.addAttribute("comments", commentService.findAllByEventId(id));
+            model.addAttribute("eventImages", eventImages);
+            model.addAttribute("mainImage", mainImage);
 
             return "events/detail";
         } catch (Exception e) {

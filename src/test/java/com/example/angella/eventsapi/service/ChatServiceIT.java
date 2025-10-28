@@ -28,8 +28,7 @@ class ChatServiceIT extends ServiceIntegrationTest {
     private UserService userService;
     @Autowired
     private LocationRepository locationRepository;
-    @Autowired
-    private ScheduleRepository scheduleRepository;
+    // УДАЛЕНО: private ScheduleRepository scheduleRepository;
 
     private User testUser;
     private Event testEvent;
@@ -51,6 +50,7 @@ class ChatServiceIT extends ServiceIntegrationTest {
     private Event buildTestEvent() {
         Event event = new Event();
         event.setName("Chat Test Event");
+        event.setDescription("Test event for chat functionality"); // ДОБАВЛЕНО: описание события
         event.setStartTime(Instant.now());
         event.setEndTime(Instant.now().plus(1, ChronoUnit.HOURS));
 
@@ -61,11 +61,13 @@ class ChatServiceIT extends ServiceIntegrationTest {
         location = locationRepository.save(location);
         event.setLocation(location);
 
-        // Настройка расписания события
+        // УДАЛЕНО: Настройка расписания события
+        /*
         Schedule schedule = new Schedule();
         schedule.setDescription("Test Schedule");
         schedule = scheduleRepository.save(schedule);
         event.setSchedule(schedule);
+        */
 
         event.setCreator(testUser);
         return event;
@@ -82,6 +84,8 @@ class ChatServiceIT extends ServiceIntegrationTest {
 
         assertNotNull(message.getId());
         assertEquals("Test message", message.getContent());
+        assertEquals(testEvent.getId(), message.getEvent().getId());
+        assertEquals(testUser.getId(), message.getAuthor().getId());
     }
 
     @Test
@@ -96,43 +100,57 @@ class ChatServiceIT extends ServiceIntegrationTest {
         );
 
         assertEquals(2, messages.getTotalElements());
+        assertEquals(2, messages.getContent().size());
+    }
+
+    @Test
+    void getMessages_ShouldReturnEmptyPageForNonExistentEvent() {
+        // Тест получения сообщений для несуществующего события
+        Page<ChatMessage> messages = chatService.getMessages(
+                999L, // Несуществующий ID
+                new PageModel(0, 10)
+        );
+
+        assertEquals(0, messages.getTotalElements());
+        assertTrue(messages.getContent().isEmpty());
     }
 
     @Test
     void updateMessage_ShouldChangeContent() {
         // Тест обновления сообщения
         ChatMessage message = chatService.createMessage(
-                "Original",
+                "Original message",
                 testEvent.getId(),
                 testUser.getId()
         );
 
         ChatMessage updated = chatService.updateMessage(
                 message.getId(),
-                "Updated",
+                "Updated message content",
                 testUser.getId()
         );
 
-        assertEquals("Updated", updated.getContent());
+        assertEquals("Updated message content", updated.getContent());
+        assertTrue(updated.isEdited());
     }
 
     @Test
     void updateMessage_ShouldThrowWhenNotAuthor() {
         // Тест проверки прав на редактирование
         ChatMessage message = chatService.createMessage(
-                "Test",
+                "Test message",
                 testEvent.getId(),
                 testUser.getId()
         );
 
         User otherUser = new User();
-        otherUser.setUsername("other");
+        otherUser.setUsername("otheruser");
         otherUser.setEmail("other@test.com");
-        otherUser.setPassword("pass");
+        otherUser.setPassword("password");
         User registeredOtherUser = userService.registerUser(otherUser);
 
         assertThrows(AccessDeniedException.class, () -> {
-            chatService.updateMessage(message.getId(), "Hacked", registeredOtherUser.getId());
+            chatService.updateMessage(message.getId(), "Hacked message", registeredOtherUser.getId());
         });
     }
 
@@ -140,12 +158,15 @@ class ChatServiceIT extends ServiceIntegrationTest {
     void deleteMessage_ShouldRemoveMessage() {
         // Тест удаления сообщения
         ChatMessage message = chatService.createMessage(
-                "To delete",
+                "Message to delete",
                 testEvent.getId(),
                 testUser.getId()
         );
+
+        // Удаление сообщения
         chatService.deleteMessage(message.getId(), testUser.getId());
 
+        // Проверка, что сообщение удалено
         Page<ChatMessage> messages = chatService.getMessages(
                 testEvent.getId(),
                 new PageModel(0, 10)
@@ -153,5 +174,59 @@ class ChatServiceIT extends ServiceIntegrationTest {
 
         assertFalse(messages.getContent().stream()
                 .anyMatch(m -> m.getId().equals(message.getId())));
+    }
+
+    @Test
+    void deleteMessage_ShouldThrowWhenNotAuthor() {
+        // Тест проверки прав на удаление
+        ChatMessage message = chatService.createMessage(
+                "Message to delete",
+                testEvent.getId(),
+                testUser.getId()
+        );
+
+        User otherUser = new User();
+        otherUser.setUsername("otheruser2");
+        otherUser.setEmail("other2@test.com");
+        otherUser.setPassword("password");
+        User registeredOtherUser = userService.registerUser(otherUser);
+
+        assertThrows(AccessDeniedException.class, () -> {
+            chatService.deleteMessage(message.getId(), registeredOtherUser.getId());
+        });
+    }
+
+    @Test
+    void isMessageAuthor_ShouldReturnTrueForAuthor() {
+        // Тест проверки авторства сообщения
+        ChatMessage message = chatService.createMessage(
+                "Test message",
+                testEvent.getId(),
+                testUser.getId()
+        );
+
+        boolean isAuthor = chatService.isMessageAuthor(message.getId(), testUser.getId());
+
+        assertTrue(isAuthor);
+    }
+
+    @Test
+    void isMessageAuthor_ShouldReturnFalseForNonAuthor() {
+        // Тест проверки авторства для не-автора
+        ChatMessage message = chatService.createMessage(
+                "Test message",
+                testEvent.getId(),
+                testUser.getId()
+        );
+
+        User otherUser = new User();
+        otherUser.setUsername("otheruser3");
+        otherUser.setEmail("other3@test.com");
+        otherUser.setPassword("password");
+        User registeredOtherUser = userService.registerUser(otherUser);
+
+        boolean isAuthor = chatService.isMessageAuthor(message.getId(), registeredOtherUser.getId());
+
+        assertFalse(isAuthor);
     }
 }

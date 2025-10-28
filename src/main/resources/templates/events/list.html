@@ -37,11 +37,22 @@
                         </option>
                     </select>
                 </div>
+
+                <div class="col-md-2">
+                    <select class="form-select" id="cityFilter">
+                        <option value="">Все города</option>
+                        <option th:each="city : ${cities}"
+                                th:value="${city}"
+                                th:text="${city}"
+                                th:selected="${selectedCity == city}">
+                        </option>
+                    </select>
+                </div>
+
                 <div class="col-md-3">
                     <select class="form-select" id="sortFilter">
                         <option value="newest">Сначала новые</option>
                         <option value="oldest">Сначала старые</option>
-                        <option value="popular">По популярности</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -49,6 +60,14 @@
                         <i class="fas fa-filter me-2"></i>Применить
                     </button>
                 </div>
+
+                <div class="col-md-1">
+                    <a th:href="@{/events}" class="btn btn-outline-secondary w-100" title="Сбросить фильтры">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </div>
+
             </div>
         </div>
     </div>
@@ -68,7 +87,7 @@
                     </div>
                     <div class="card-body">
                         <h5 class="card-title" th:text="${event.name}">Название события</h5>
-                        <p class="card-text text-muted" th:text="${event.schedule?.description}">
+                        <p class="card-text text-muted" th:text="${event.description}">
                             Описание мероприятия...
                         </p>
 
@@ -139,18 +158,42 @@
 
             $('#applyFilters').on('click', applyFilters);
 
+            // Функция применения фильтров
             function applyFilters() {
                 const search = $('#searchInput').val();
                 const category = $('#categoryFilter').val();
+                const city = $('#cityFilter').val();
                 const sort = $('#sortFilter').val();
 
                 let url = '/events?';
                 if (search) url += `search=${encodeURIComponent(search)}&`;
                 if (category) url += `categoryId=${category}&`;
+                if (city) url += `city=${encodeURIComponent(city)}&`;
                 if (sort) url += `sort=${sort}`;
+
+                // Убираем последний & если есть
+                if (url.endsWith('&')) {
+                    url = url.slice(0, -1);
+                }
 
                 window.location.href = url;
             }
+
+            // Обработчики событий
+            $('#searchInput').on('keypress', function(e) {
+                if (e.which === 13) { // Enter key
+                    applyFilters();
+                }
+            });
+
+            $('#applyFilters').on('click', applyFilters);
+
+            // Автозаполнение для поля города
+            $('#cityFilter').select2({
+                placeholder: "Выберите город",
+                allowClear: true,
+                width: '100%'
+            });
 
             // Load more functionality
             let currentPage = 1;
@@ -174,7 +217,7 @@
                             endTime: new Date(),
                             location: {city: 'Город', street: 'Улица'},
                             participants: [],
-                            schedule: {description: 'Описание дополнительного мероприятия'},
+                            description: {description: 'Описание дополнительного мероприятия'},
                             creator: {username: 'Организатор'}
                         }
                     ];

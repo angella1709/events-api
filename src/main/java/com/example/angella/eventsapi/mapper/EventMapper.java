@@ -17,6 +17,7 @@ import java.util.Set;
 )
 public interface EventMapper {
 
+    @Mapping(target = "description", source = "description")
     @Mapping(target = "location.city", source = "cityLocation")
     @Mapping(target = "location.street", source = "streetLocation")
     @Mapping(target = "creator.id", source = "creatorId")
@@ -24,6 +25,7 @@ public interface EventMapper {
     @Mapping(target = "endTime", expression = "java(request.getEndTimeAsInstant())")
     Event toEntity(CreateEventRequest request);
 
+    @Mapping(target = "description", source = "description")
     @Mapping(target = "location.city", source = "city")
     @Mapping(target = "location.street", source = "street")
     Event toEntity(UpdateEventRequest request);

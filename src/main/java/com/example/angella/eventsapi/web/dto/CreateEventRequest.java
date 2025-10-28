@@ -31,7 +31,7 @@ public class CreateEventRequest {
     private Set<@NotBlank(message = "Категория не может быть пустой!") String> categories;
 
     @NotBlank(message = "Описание мероприятия должно быть указано!")
-    private String schedule;
+    private String description;
 
     @NotBlank(message = "Город должен быть указан!")
     private String cityLocation;

@@ -82,24 +82,6 @@ databaseChangeLog:
                   type: varchar(255)
 
         - createTable:
-            tableName: schedule
-            columns:
-              - column:
-                  name: id
-                  type: bigserial
-                  constraints:
-                    primaryKey: true
-              - column:
-                  name: created_at
-                  type: timestamp with time zone
-              - column:
-                  name: updated_at
-                  type: timestamp with time zone
-              - column:
-                  name: description
-                  type: varchar(255)
-
-        - createTable:
             tableName: checklist_template
             columns:
               - column:
@@ -165,8 +147,10 @@ databaseChangeLog:
                   name: creator_id
                   type: bigint
               - column:
-                  name: schedule_id
-                  type: bigint
+                  name: description
+                  type: text
+                  constraints:
+                    nullable: false
 
         - createTable:
             tableName: chat_message
@@ -464,13 +448,6 @@ databaseChangeLog:
             referencedTableName: usr
             referencedColumnNames: id
             constraintName: fk_event_creator_id
-
-        - addForeignKeyConstraint:
-            baseTableName: event
-            baseColumnNames: schedule_id
-            referencedTableName: schedule
-            referencedColumnNames: id
-            constraintName: fk_event_schedule_id
 
         - addForeignKeyConstraint:
             baseTableName: chat_message

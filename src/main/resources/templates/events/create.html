@@ -159,11 +159,11 @@
             const form = document.getElementById('createEventForm');
 
             // Счетчик символов для описания
-            const scheduleTextarea = document.getElementById('schedule');
-            const scheduleCounter = document.getElementById('scheduleCounter');
+            const descriptionTextarea = document.getElementById('description');
+            const descriptionCounter = document.getElementById('descriptionCounter');
 
-            scheduleTextarea.addEventListener('input', function() {
-                scheduleCounter.textContent = this.value.length;
+            descriptionTextarea.addEventListener('input', function() {
+                descriptionCounter.textContent = this.value.length;
             });
 
             // Обработка добавления новых категорий

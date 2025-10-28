@@ -50,6 +50,9 @@ public class SecurityConfiguration {
                                 // Публичные API endpoints
                                 .requestMatchers("/api/v1/public/**").permitAll()
 
+                                // Chrome DevTools специфичный путь
+                                .requestMatchers("/.well-known/**").permitAll()
+
                                 // API endpoints (должны быть после публичных)
                                 .requestMatchers("/api/v1/**").authenticated()
 

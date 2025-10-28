@@ -29,6 +29,7 @@ public class EventService {
     private final CategoryService categoryService;
     private final LocationRepository locationRepository;
     private final UserService userService;
+    private final ImageService imageService;
     private final ApplicationEventPublisher eventPublisher;
 
     public List<Event> findAll() {
@@ -113,6 +114,10 @@ public class EventService {
             existingEvent.setLocation(location);
         }
 
+        if (StringUtils.isNotBlank(request.getDescription())) {
+            existingEvent.setDescription(request.getDescription());
+        }
+
         Event updatedEvent = eventRepository.save(existingEvent);
 
         return updatedEvent;
@@ -168,5 +173,29 @@ public class EventService {
             throw new EntityNotFoundException("Event not found");
         }
         eventRepository.deleteById(eventId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getAllCities() {
+        return eventRepository.findAllDistinctCities();
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> searchCities(String search) {
+        if (search == null || search.trim().isEmpty()) {
+            return getAllCities();
+        }
+        return eventRepository.findDistinctCitiesBySearch(search.trim());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Image> getEventImages(Long eventId) {
+        return imageService.getEventImages(eventId);
+    }
+
+    @Transactional(readOnly = true)
+    public Image getMainEventImage(Long eventId) {
+        List<Image> images = imageService.getEventImages(eventId);
+        return images.isEmpty() ? null : images.get(0);
     }
 }
