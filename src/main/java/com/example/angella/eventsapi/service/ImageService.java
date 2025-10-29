@@ -26,7 +26,7 @@ import java.util.UUID;
 public class ImageService {
 
     private final ImageRepository imageRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final EventRepository eventRepository;
 
     @Value("${app.upload.dir:uploads}")
@@ -35,18 +35,17 @@ public class ImageService {
     // АВАТАР ПОЛЬЗОВАТЕЛЯ
     public String uploadAvatar(MultipartFile file, Long userId) {
         try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+            User user = userService.findById(userId);
 
-            // Удаляем старый аватар если есть
-            if (user.getAvatar() != null) {
+            // Удаляем старый аватар только если это не заглушка
+            if (user.getAvatar() != null && !user.getAvatar().getFilename().equals("default-avatar.png")) {
                 deleteImageFile(user.getAvatar());
                 imageRepository.delete(user.getAvatar());
             }
 
             Image image = saveImage(file, user, null, null);
             user.setAvatar(image);
-            userRepository.save(user);
+            userService.save(user);
 
             return "/images/" + image.getFilename();
         } catch (IOException e) {
@@ -196,5 +195,22 @@ public class ImageService {
         }
 
         return image;
+    }
+
+    public Image getDefaultAvatar() {
+        // Ищем существующую заглушку в базе
+        return imageRepository.findByFilename("default-avatar.png")
+                .orElseGet(() -> createDefaultAvatar());
+    }
+
+    private Image createDefaultAvatar() {
+        Image defaultAvatar = new Image();
+        defaultAvatar.setFilename("default-avatar.png");
+        defaultAvatar.setOriginalFilename("default-avatar.png");
+        defaultAvatar.setContentType("image/png");
+        defaultAvatar.setSize(0L);
+        defaultAvatar.setFilePath("system/default-avatar.png");
+
+        return imageRepository.save(defaultAvatar);
     }
 }

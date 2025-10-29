@@ -9,6 +9,13 @@ import com.example.angella.eventsapi.service.*;
 import com.example.angella.eventsapi.web.dto.CreateEventRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.example.angella.eventsapi.web.dto.UpdateUserRequest;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,6 +24,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -170,6 +180,8 @@ public class WebController {
         return "auth/register";
     }
 
+    // В класс WebController добавьте:
+
     @GetMapping("/profile")
     public String profile(Model model, Authentication authentication) {
         if (authentication == null) {
@@ -177,13 +189,86 @@ public class WebController {
         }
 
         try {
-            var user = userService.findByUsername(authentication.getName());
-            model.addAttribute("user", user);
+            User user = userService.findByUsername(authentication.getName());
+            // Инициализируем коллекции
+            User userWithEvents = userService.findByIdWithEvents(user.getId());
+            model.addAttribute("user", userWithEvents);
+            model.addAttribute("updateRequest", new UpdateUserRequest());
             return "auth/profile";
         } catch (Exception e) {
             log.error("Error loading profile page", e);
             model.addAttribute("error", "Не удалось загрузить профиль");
             return "auth/profile";
+        }
+    }
+
+    @PostMapping("/profile/update")
+    public String updateProfile(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @ModelAttribute UpdateUserRequest updateRequest,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            User user = userService.findByUsername(userDetails.getUsername());
+            User updatedUser = userService.updateUser(
+                    user.getId(),
+                    updateRequest.getFirstName(),
+                    updateRequest.getLastName()
+            );
+
+            redirectAttributes.addFlashAttribute("success", "Профиль успешно обновлен");
+            return "redirect:/profile";
+
+        } catch (Exception e) {
+            log.error("Error updating profile", e);
+            model.addAttribute("error", "Ошибка при обновлении профиля: " + e.getMessage());
+            User user = userService.findByUsername(userDetails.getUsername());
+            model.addAttribute("user", user);
+            return "auth/profile";
+        }
+    }
+
+    @PostMapping("/profile/avatar")
+    public String updateAvatar(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam("avatarFile") MultipartFile avatarFile,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            User user = userService.findByUsername(userDetails.getUsername());
+
+            if (avatarFile.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Файл не выбран");
+                return "redirect:/profile";
+            }
+
+            // Проверка типа файла
+            String contentType = avatarFile.getContentType();
+            if (contentType == null ||
+                    (!contentType.equals("image/jpeg") &&
+                            !contentType.equals("image/png") &&
+                            !contentType.equals("image/gif"))) {
+                redirectAttributes.addFlashAttribute("error", "Неподдерживаемый формат файла. Используйте JPG, PNG или GIF.");
+                return "redirect:/profile";
+            }
+
+            // Проверка размера файла (2MB)
+            if (avatarFile.getSize() > 2 * 1024 * 1024) {
+                redirectAttributes.addFlashAttribute("error", "Файл слишком большой. Максимальный размер: 2MB");
+                return "redirect:/profile";
+            }
+
+            // Загружаем аватар через ImageService
+            String imageUrl = imageService.uploadAvatar(avatarFile, user.getId());
+
+            redirectAttributes.addFlashAttribute("success", "Аватар успешно обновлен");
+            return "redirect:/profile";
+
+        } catch (Exception e) {
+            log.error("Error updating avatar", e);
+            redirectAttributes.addFlashAttribute("error", "Ошибка при обновлении аватара: " + e.getMessage());
+            return "redirect:/profile";
         }
     }
 

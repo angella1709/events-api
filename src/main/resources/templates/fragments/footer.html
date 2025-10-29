@@ -3,15 +3,22 @@
 <body>
 <footer th:fragment="footer" class="footer-custom text-light py-4 mt-5">
     <div class="container">
-        <div class="row">
-            <div class="col-md-4">
-                <h5>EventsPlatform</h5>
-                <p>Платформа для организации и поиска мероприятий</p>
-            </div>
-            <div class="col-md-4">
-                <h5>Контакты</h5>
-                <p>Email: info@eventsplatform.ru</p>
-                <p>Телефон: +7 (999) 123-45-67</p>
+        <div class="row justify-content-center">  <!-- Добавлен justify-content-center -->
+            <div class="col-md-8">  <!-- Уменьшена ширина колонки -->
+                <div class="row">
+                    <!-- Левая часть - О платформе -->
+                    <div class="col-md-6 text-center text-md-start">  <!-- Добавлены классы выравнивания -->
+                        <h5>EventsPlatform</h5>
+                        <p>Платформа для организации и поиска мероприятий</p>
+                    </div>
+
+                    <!-- Правая часть - Контакты -->
+                    <div class="col-md-6 text-center text-md-start">  <!-- Добавлены классы выравнивания -->
+                        <h5>Контакты</h5>
+                        <p>Email: info@eventsplatform.ru</p>
+                        <p>Телефон: +7 (999) 123-45-67</p>
+                    </div>
+                </div>
             </div>
         </div>
         <hr class="bg-light">

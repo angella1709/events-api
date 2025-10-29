@@ -66,12 +66,13 @@ public class SecurityConfiguration {
 
                                 // Аутентифицированные страницы
                                 .requestMatchers("/profile", "/chats/**").authenticated()
-
+                                .requestMatchers("/profile/**").authenticated()
 
                                 // Admin pages
                                 .requestMatchers("/admin/**", "/api/v1/admin/**").hasRole("ADMIN")
 
                                 .anyRequest().authenticated()
+
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
