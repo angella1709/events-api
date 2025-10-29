@@ -30,19 +30,15 @@ spring:
     static-path-pattern: /**
   web:
     resources:
-      static-locations: classpath:/static/,classpath:/public/
+      static-locations: classpath:/static/,classpath:/public/,file:${app.upload.dir:uploads}/
 
-  app:
-    upload:
-      dir: uploads
+  servlet:
+    multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+      enabled: true
+      file-size-threshold: 2KB
 
-  spring:
-    servlet:
-      multipart:
-        max-file-size: 10MB
-        max-request-size: 10MB
-        enabled: true
-        location: ${app.upload.dir:uploads}
-
+app:
+  upload:
+    dir: uploads

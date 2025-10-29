@@ -23,7 +23,15 @@
                             <span th:text="${error}">Ошибка при создании мероприятия</span>
                         </div>
 
-                        <form id="createEventForm" th:action="@{/event/create}" method="post" class="needs-validation" novalidate>
+                        <!-- Сообщения о предупреждениях -->
+                        <div th:if="${warning}" class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span th:text="${warning}">Предупреждение</span>
+                        </div>
+
+                        <!-- ИСПРАВЛЕНИЕ: добавлен enctype="multipart/form-data" -->
+                        <form id="createEventForm" th:action="@{/event/create}" method="post"
+                              class="needs-validation" novalidate enctype="multipart/form-data">
                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
 
                             <!-- Поля формы -->
@@ -109,19 +117,22 @@
                                 <div class="invalid-feedback">Добавьте описание мероприятия</div>
                             </div>
 
-                            <div class="form-group">
-                                <label for="eventImage">Изображение мероприятия:</label>
-                                <input type="file" id="eventImage" name="eventImage" accept="image/*" class="form-control">
-                                <small class="form-text text-muted">
-                                    Поддерживаемые форматы: JPG, PNG, GIF. Максимальный размер: 5MB
-                                </small>
+                            <!-- ИСПРАВЛЕНИЕ: поле для загрузки изображения -->
+                            <div class="mb-3">
+                                <label for="eventImage" class="form-label">Изображение мероприятия</label>
+                                <input type="file" class="form-control" id="eventImage" name="eventImage"
+                                       accept="image/jpeg,image/png,image/gif">
+                                <div class="form-text">
+                                    Поддерживаемые форматы: JPG, PNG, GIF. Максимальный размер: 10MB
+                                </div>
                             </div>
 
                             <!-- Превью изображения -->
-                            <div class="form-group" id="imagePreview" style="display: none;">
-                                <label>Предпросмотр:</label>
+                            <div class="mb-3" id="imagePreview" style="display: none;">
+                                <label class="form-label">Предпросмотр:</label>
                                 <div>
-                                    <img id="preview" src="#" alt="Предпросмотр" style="max-width: 300px; max-height: 200px;">
+                                    <img id="preview" src="#" alt="Предпросмотр"
+                                         style="max-width: 300px; max-height: 200px; border-radius: 8px;">
                                 </div>
                             </div>
 
@@ -145,6 +156,7 @@
                             <li><i class="fas fa-check text-success me-2"></i>Выберите подходящие категории</li>
                             <li><i class="fas fa-check text-success me-2"></i>Добавьте подробное описание программы</li>
                             <li><i class="fas fa-check text-success me-2"></i>Укажите точный адрес проведения</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Добавьте привлекательное изображение</li>
                         </ul>
                     </div>
                 </div>
@@ -213,6 +225,44 @@
                 button.parentElement.remove();
             };
 
+            // Предпросмотр изображения
+            document.getElementById('eventImage').addEventListener('change', function(e) {
+                const preview = document.getElementById('preview');
+                const previewContainer = document.getElementById('imagePreview');
+                const file = e.target.files[0];
+
+                if (file) {
+                    // Проверка размера файла (10MB)
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert('Файл слишком большой. Максимальный размер: 10MB');
+                        this.value = '';
+                        previewContainer.style.display = 'none';
+                        return;
+                    }
+
+                    // Проверка типа файла
+                    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                    if (!validTypes.includes(file.type)) {
+                        alert('Неподдерживаемый формат файла. Используйте JPG, PNG или GIF.');
+                        this.value = '';
+                        previewContainer.style.display = 'none';
+                        return;
+                    }
+
+                    const reader = new FileReader();
+
+                    reader.onload = function(e) {
+                        preview.src = e.target.result;
+                        previewContainer.style.display = 'block';
+                    }
+
+                    reader.readAsDataURL(file);
+                } else {
+                    previewContainer.style.display = 'none';
+                    preview.src = '#';
+                }
+            });
+
             // Валидация формы
             form.addEventListener('submit', function(e) {
                 if (!form.checkValidity()) {
@@ -247,26 +297,6 @@
                 console.log('Отправляем время начала:', startTimeInput.value);
                 console.log('Отправляем время окончания:', endTimeInput.value);
             });
-        });
-
-        document.getElementById('eventImage').addEventListener('change', function(e) {
-            const preview = document.getElementById('preview');
-            const previewContainer = document.getElementById('imagePreview');
-            const file = e.target.files[0];
-
-            if (file) {
-                const reader = new FileReader();
-
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    previewContainer.style.display = 'block';
-                }
-
-                reader.readAsDataURL(file);
-            } else {
-                previewContainer.style.display = 'none';
-                preview.src = '#';
-            }
         });
     </script>
 </div>

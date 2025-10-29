@@ -66,7 +66,18 @@ public class ImageService {
                 throw new AccessDeniedException("Only event participants can upload images");
             }
 
+            // ИСПРАВЛЕНИЕ: Сохраняем изображение и связываем с событием
             Image image = saveImage(file, null, event, null);
+
+            // Обновляем связь события с изображением
+            if (event.getImages() == null) {
+                event.setImages(new java.util.HashSet<>());
+            }
+            event.getImages().add(image);
+            eventRepository.save(event);
+
+            log.info("Image successfully uploaded and linked to event {}: {}", eventId, image.getFilename());
+
             return "/images/" + image.getFilename();
         } catch (IOException e) {
             log.error("Error uploading event image", e);
@@ -82,6 +93,9 @@ public class ImageService {
 
     // ОСНОВНОЙ МЕТОД СОХРАНЕНИЯ ИЗОБРАЖЕНИЯ
     private Image saveImage(MultipartFile file, User user, Event event, ChatMessage chatMessage) throws IOException {
+        log.info("Starting image upload: originalFilename={}, size={}, contentType={}",
+                file.getOriginalFilename(), file.getSize(), file.getContentType());
+
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isEmpty()) {
             throw new IllegalArgumentException("File name cannot be empty");
@@ -98,6 +112,7 @@ public class ImageService {
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
+            log.info("Created upload directory: {}", uploadPath.toAbsolutePath());
         }
 
         Path filePath = uploadPath.resolve(filename);
@@ -119,7 +134,11 @@ public class ImageService {
             image.setChatMessage(chatMessage);
         }
 
-        return imageRepository.save(image);
+        Image savedImage = imageRepository.save(image);
+        log.info("Image saved successfully: filename={}, id={}, path={}",
+                filename, savedImage.getId(), filePath.toString());
+
+        return savedImage;
     }
 
     // УДАЛЕНИЕ ФАЙЛА ИЗОБРАЖЕНИЯ
@@ -127,6 +146,7 @@ public class ImageService {
         try {
             Path filePath = Paths.get(image.getFilePath());
             Files.deleteIfExists(filePath);
+            log.info("Image file deleted: {}", image.getFilePath());
         } catch (IOException e) {
             log.warn("Failed to delete image file: {}", image.getFilePath(), e);
         }

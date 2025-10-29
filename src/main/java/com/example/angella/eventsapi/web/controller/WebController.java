@@ -95,11 +95,10 @@ public class WebController {
                         .collect(Collectors.toList());
             }
 
-            // Сортировка
             if ("oldest".equals(sort)) {
-                events.sort(Comparator.comparing(Event::getStartTime));
+                events.sort(Comparator.comparing(Event::getStartTime).reversed()); // "Сначала дальние"
             } else {
-                events.sort(Comparator.comparing(Event::getStartTime).reversed());
+                events.sort(Comparator.comparing(Event::getStartTime)); // "Сначала ближние" (по умолчанию)
             }
 
             // Получаем список уникальных городов для фильтра
@@ -240,13 +239,16 @@ public class WebController {
             Event event = eventMapper.toEntity(request);
             Event savedEvent = eventService.create(event, user.getId());
 
-            // Обработка изображения, если оно загружено
+            // ИСПРАВЛЕНИЕ: Правильная обработка изображения
             if (eventImage != null && !eventImage.isEmpty()) {
                 try {
-                    imageService.uploadEventImage(eventImage, savedEvent.getId(), user.getId());
+                    // Сохраняем изображение и связываем с событием
+                    String imageUrl = imageService.uploadEventImage(eventImage, savedEvent.getId(), user.getId());
+                    log.info("Image uploaded successfully: {}", imageUrl);
                 } catch (Exception e) {
-                    log.warn("Failed to upload event image: {}", e.getMessage());
-                    // Продолжаем без изображения
+                    log.error("Failed to upload event image: {}", e.getMessage());
+                    // Можно добавить сообщение об ошибке, но продолжаем создание события
+                    model.addAttribute("warning", "Изображение не было загружено: " + e.getMessage());
                 }
             }
 
