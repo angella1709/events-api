@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -94,6 +96,17 @@ public class ImageService {
     private Image saveImage(MultipartFile file, User user, Event event, ChatMessage chatMessage) throws IOException {
         log.info("Starting image upload: originalFilename={}, size={}, contentType={}",
                 file.getOriginalFilename(), file.getSize(), file.getContentType());
+
+        if (file.getSize() > 10 * 1024 * 1024) {
+            throw new RuntimeException("File size exceeds 10MB limit");
+        }
+
+        // Проверка формата файла
+        String contentType = file.getContentType();
+        List<String> allowedTypes = Arrays.asList("image/jpeg", "image/png", "image/gif");
+        if (contentType == null || !allowedTypes.contains(contentType)) {
+            throw new RuntimeException("Unsupported file format: " + contentType);
+        }
 
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isEmpty()) {
