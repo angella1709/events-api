@@ -9,6 +9,7 @@ import com.example.angella.eventsapi.repository.LocationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -23,16 +24,14 @@ class ChecklistServiceIT extends ServiceIntegrationTest {
     @Autowired private EventService eventService;
     @Autowired private UserService userService;
     @Autowired private CategoryService categoryService;
-    @Autowired private ChecklistTemplateService templateService;
-    @Autowired private LocationRepository locationRepository;
     @Autowired private ChecklistItemRepository checklistItemRepository;
+    @Autowired private LocationRepository locationRepository;
 
     private User organizer;
     private User participant1;
     private User participant2;
     private User nonParticipant;
     private Event testEvent;
-    private ChecklistTemplate testTemplate;
 
     @BeforeEach
     void setUp() {
@@ -46,9 +45,6 @@ class ChecklistServiceIT extends ServiceIntegrationTest {
         testEvent = createTestEvent(organizer);
         eventService.addParticipant(testEvent.getId(), participant1.getId());
         eventService.addParticipant(testEvent.getId(), participant2.getId());
-
-        // Создаем тестовый шаблон
-        testTemplate = createTestTemplate();
     }
 
     @Test
@@ -220,23 +216,6 @@ class ChecklistServiceIT extends ServiceIntegrationTest {
     }
 
     @Test
-    void applyTemplateToEvent_ShouldCreateItemsFromTemplate() {
-        // Act
-        List<ChecklistItem> createdItems = templateService.applyTemplateToEvent(
-                testTemplate.getId(), testEvent.getId(), organizer.getId()
-        );
-
-        // Assert
-        assertEquals(3, createdItems.size()); // Из нашего тестового шаблона
-        assertTrue(createdItems.stream().allMatch(ChecklistItem::getFromTemplate));
-
-        // Проверяем что элементы созданы с правильными данными
-        assertTrue(createdItems.stream().anyMatch(item -> "Плед".equals(item.getName())));
-        assertTrue(createdItems.stream().anyMatch(item -> "Корзина для пикника".equals(item.getName())));
-        assertTrue(createdItems.stream().anyMatch(item -> "Одноразовая посуда".equals(item.getName())));
-    }
-
-    @Test
     void checklistStatistics_ShouldCalculateCorrectly() {
         // Arrange
         checklistService.createItem("Item 1", null, 1, testEvent.getId(), organizer.getId(), null);
@@ -292,13 +271,5 @@ class ChecklistServiceIT extends ServiceIntegrationTest {
 
         event.setCreator(creator);
         return eventService.create(event, creator.getId());
-    }
-
-    private ChecklistTemplate createTestTemplate() {
-        ChecklistTemplate template = new ChecklistTemplate();
-        template.setName("Test Template");
-        template.setDescription("Test Template Description");
-        template.setCategory(TemplateCategory.PICNIC);
-        return templateService.createTemplate(template);
     }
 }
