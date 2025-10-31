@@ -5,6 +5,7 @@ import com.example.angella.eventsapi.entity.Role;
 import com.example.angella.eventsapi.entity.User;
 import com.example.angella.eventsapi.exception.EntityNotFoundException;
 import com.example.angella.eventsapi.exception.RegisterUserException;
+import com.example.angella.eventsapi.repository.ImageRepository;
 import com.example.angella.eventsapi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,9 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.text.MessageFormat;
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -24,8 +23,8 @@ import java.util.Set;
 public class UserService {
 
     private final UserRepository userRepository;
-
     private final PasswordEncoder passwordEncoder;
+    private final ImageRepository imageRepository; // Используем репозиторий вместо сервиса
 
     @Transactional
     public User registerUser(User user) {
@@ -55,6 +54,7 @@ public class UserService {
                 MessageFormat.format("User with id {0} not found!", id)
         ));
     }
+
     @Transactional(readOnly = true)
     public User findByUsername(String username) {
         return userRepository.findByUsername(username).orElseThrow(() ->
@@ -82,6 +82,28 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void deleteUser(Long userId) {
+        User user = findById(userId);
+
+        // Удаляем аватар пользователя если он не дефолтный через репозиторий
+        if (user.getAvatar() != null && !user.getAvatar().getFilename().equals("default-avatar.png")) {
+            try {
+                // Удаляем файл изображения
+                java.nio.file.Path filePath = java.nio.file.Paths.get(user.getAvatar().getFilePath());
+                java.nio.file.Files.deleteIfExists(filePath);
+                // Удаляем запись из БД
+                imageRepository.delete(user.getAvatar());
+            } catch (Exception e) {
+                // Логируем ошибку, но продолжаем удаление пользователя
+                System.err.println("Failed to delete user avatar: " + e.getMessage());
+            }
+        }
+
+        userRepository.delete(user);
+    }
+
     @Transactional
     public User updateUser(Long userId, String firstName, String lastName) {
         User user = findById(userId);
@@ -100,11 +122,6 @@ public class UserService {
     @Transactional
     public User updateUserAvatar(Long userId, Image avatar) {
         User user = findById(userId);
-
-        // Удаляем старый аватар только если это не заглушка
-        if (user.getAvatar() != null && !user.getAvatar().getFilename().equals("default-avatar.png")) {
-        }
-
         user.setAvatar(avatar);
         return userRepository.save(user);
     }
@@ -115,10 +132,10 @@ public class UserService {
 
         // Инициализируем ленивые коллекции
         if (user.getCreatedEvents() != null) {
-            user.getCreatedEvents().size(); // Это загрузит коллекцию
+            user.getCreatedEvents().size();
         }
         if (user.getEvents() != null) {
-            user.getEvents().size(); // Это загрузит коллекцию
+            user.getEvents().size();
         }
 
         return user;

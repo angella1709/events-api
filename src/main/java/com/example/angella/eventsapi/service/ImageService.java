@@ -5,10 +5,10 @@ import com.example.angella.eventsapi.exception.AccessDeniedException;
 import com.example.angella.eventsapi.exception.EntityNotFoundException;
 import com.example.angella.eventsapi.repository.EventRepository;
 import com.example.angella.eventsapi.repository.ImageRepository;
-import com.example.angella.eventsapi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,7 +28,10 @@ import java.util.UUID;
 public class ImageService {
 
     private final ImageRepository imageRepository;
+
+    @Lazy  // Ленивая зависимость чтобы разорвать цикл
     private final UserService userService;
+
     private final EventRepository eventRepository;
 
     @Value("${app.upload.dir:uploads}")
@@ -183,17 +186,17 @@ public class ImageService {
     }
 
     // ПОЛУЧЕНИЕ ИЗОБРАЖЕНИЙ ПОЛЬЗОВАТЕЛЯ
-    public java.util.List<Image> getUserImages(Long userId) {
+    public List<Image> getUserImages(Long userId) {
         return imageRepository.findByUserId(userId);
     }
 
     // ПОЛУЧЕНИЕ ИЗОБРАЖЕНИЙ СОБЫТИЯ
-    public java.util.List<Image> getEventImages(Long eventId) {
+    public List<Image> getEventImages(Long eventId) {
         return imageRepository.findByEventId(eventId);
     }
 
     // ПОЛУЧЕНИЕ ИЗОБРАЖЕНИЙ СООБЩЕНИЯ ЧАТА
-    public java.util.List<Image> getChatMessageImages(Long chatMessageId) {
+    public List<Image> getChatMessageImages(Long chatMessageId) {
         return imageRepository.findByChatMessageId(chatMessageId);
     }
 

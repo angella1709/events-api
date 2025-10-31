@@ -23,7 +23,6 @@ class ChecklistServiceIT extends ServiceIntegrationTest {
     @Autowired private ChecklistService checklistService;
     @Autowired private EventService eventService;
     @Autowired private UserService userService;
-    @Autowired private CategoryService categoryService;
     @Autowired private ChecklistItemRepository checklistItemRepository;
     @Autowired private LocationRepository locationRepository;
 

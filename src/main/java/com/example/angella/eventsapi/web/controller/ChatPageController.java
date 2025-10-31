@@ -1,3 +1,4 @@
+// FILE: src/main/java/com/example/angella/eventsapi/web/controller/ChatPageController.java
 package com.example.angella.eventsapi.web.controller;
 
 import com.example.angella.eventsapi.entity.Event;
@@ -31,33 +32,43 @@ public class ChatPageController {
 
     @GetMapping
     public String chatsPage(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        User user = userService.findByUsername(userDetails.getUsername());
-        List<Event> userEvents = user.getEvents().stream()
-                .collect(Collectors.toList());
+        try {
+            User user = userService.findByIdWithEvents(Long.valueOf(userDetails.getUsername()));
+            List<Event> userEvents = user.getEvents().stream()
+                    .collect(Collectors.toList());
 
-        model.addAttribute("events", userEvents);
-        model.addAttribute("currentUser", user);
-        return "chats/list";
+            model.addAttribute("events", userEvents);
+            model.addAttribute("currentUser", user);
+            return "chats/list";
+        } catch (Exception e) {
+            model.addAttribute("error", "Ошибка загрузки чатов");
+            return "chats/list";
+        }
     }
 
     @GetMapping("/{eventId}")
     public String chatRoom(@AuthenticationPrincipal UserDetails userDetails,
                            @PathVariable Long eventId,
                            Model model) {
-        User user = userService.findByUsername(userDetails.getUsername());
-        Event event = eventService.getByIdWithRelations(eventId);
+        try {
+            User user = userService.findByIdWithEvents(Long.valueOf(userDetails.getUsername()));
+            Event event = eventService.getByIdWithRelations(eventId);
 
-        // Проверяем, что пользователь является участником события
-        if (!event.getParticipants().contains(user)) {
-            return "redirect:/chats?error=access_denied";
+            // Проверяем, что пользователь является участником события
+            if (!event.getParticipants().contains(user)) {
+                return "redirect:/chats?error=access_denied";
+            }
+
+            model.addAttribute("event", event);
+            model.addAttribute("currentUser", user);
+            model.addAttribute("tasks", taskService.getTasksForEvent(eventId));
+            model.addAttribute("checklist", checklistService.getChecklistForEvent(eventId));
+            model.addAttribute("participants", event.getParticipants());
+
+            return "chats/room";
+        } catch (Exception e) {
+            model.addAttribute("error", "Ошибка загрузки чата");
+            return "redirect:/chats";
         }
-
-        model.addAttribute("event", event);
-        model.addAttribute("currentUser", user);
-        model.addAttribute("tasks", taskService.getTasksForEvent(eventId));
-        model.addAttribute("checklist", checklistService.getChecklistForEvent(eventId));
-        model.addAttribute("participants", event.getParticipants());
-
-        return "chats/room";
     }
 }

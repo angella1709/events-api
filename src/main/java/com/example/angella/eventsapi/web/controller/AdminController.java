@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -23,16 +24,19 @@ public class AdminController {
 
     private final UserService userService;
     private final EventService eventService;
-    private final ChecklistTemplateService templateService; // ADD THIS
+    private final ChecklistTemplateService templateService;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
         // Статистика
         List<User> users = userService.findAllUsers();
         List<Event> events = eventService.findAll();
+        List<Event> upcomingEvents = eventService.findUpcomingEvents();
 
         model.addAttribute("totalUsers", users.size());
         model.addAttribute("totalEvents", events.size());
+        model.addAttribute("upcomingEvents", upcomingEvents.size());
+        model.addAttribute("recentUsers", users.size() > 5 ? users.subList(0, 5) : users);
 
         return "admin/dashboard";
     }
@@ -44,6 +48,35 @@ public class AdminController {
         return "admin/users";
     }
 
+    @PostMapping("/users/{userId}/delete")
+    public String deleteUser(@PathVariable Long userId, RedirectAttributes redirectAttributes) {
+        try {
+            userService.deleteUser(userId);
+            redirectAttributes.addFlashAttribute("success", "Пользователь успешно удален");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при удалении пользователя: " + e.getMessage());
+        }
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/users/{userId}/toggle-admin")
+    public String toggleAdminRole(@PathVariable Long userId,
+                                  @RequestParam boolean makeAdmin,
+                                  RedirectAttributes redirectAttributes) {
+        try {
+            if (makeAdmin) {
+                userService.addAdminRole(userId);
+                redirectAttributes.addFlashAttribute("success", "Права администратора добавлены");
+            } else {
+                userService.removeAdminRole(userId);
+                redirectAttributes.addFlashAttribute("success", "Права администратора удалены");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при изменении прав: " + e.getMessage());
+        }
+        return "redirect:/admin/users";
+    }
+
     @GetMapping("/events")
     public String eventManagement(Model model) {
         List<Event> events = eventService.findAll();
@@ -52,9 +85,14 @@ public class AdminController {
     }
 
     @PostMapping("/events/{eventId}/delete")
-    public String deleteEvent(@PathVariable Long eventId) {
-        eventService.deleteEventByAdmin(eventId);
-        return "redirect:/admin/events?success=Event deleted";
+    public String deleteEvent(@PathVariable Long eventId, RedirectAttributes redirectAttributes) {
+        try {
+            eventService.deleteEventByAdmin(eventId);
+            redirectAttributes.addFlashAttribute("success", "Мероприятие успешно удалено");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при удалении мероприятия: " + e.getMessage());
+        }
+        return "redirect:/admin/events";
     }
 
     @GetMapping("/templates")
@@ -71,9 +109,14 @@ public class AdminController {
     }
 
     @PostMapping("/templates/create")
-    public String createTemplate(@ModelAttribute ChecklistTemplate template) {
-        templateService.createTemplate(template);
-        return "redirect:/admin/templates?success=Template created";
+    public String createTemplate(@ModelAttribute ChecklistTemplate template, RedirectAttributes redirectAttributes) {
+        try {
+            templateService.createTemplate(template);
+            redirectAttributes.addFlashAttribute("success", "Шаблон успешно создан");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при создании шаблона: " + e.getMessage());
+        }
+        return "redirect:/admin/templates";
     }
 
     @GetMapping("/templates/{id}/edit")
@@ -85,14 +128,24 @@ public class AdminController {
     }
 
     @PostMapping("/templates/{id}/edit")
-    public String updateTemplate(@PathVariable Long id, @ModelAttribute ChecklistTemplate template) {
-        templateService.updateTemplate(id, template);
-        return "redirect:/admin/templates?success=Template updated";
+    public String updateTemplate(@PathVariable Long id, @ModelAttribute ChecklistTemplate template, RedirectAttributes redirectAttributes) {
+        try {
+            templateService.updateTemplate(id, template);
+            redirectAttributes.addFlashAttribute("success", "Шаблон успешно обновлен");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при обновлении шаблона: " + e.getMessage());
+        }
+        return "redirect:/admin/templates";
     }
 
     @PostMapping("/templates/{id}/delete")
-    public String deleteTemplate(@PathVariable Long id) {
-        templateService.deleteTemplate(id);
-        return "redirect:/admin/templates?success=Template deleted";
+    public String deleteTemplate(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            templateService.deleteTemplate(id);
+            redirectAttributes.addFlashAttribute("success", "Шаблон успешно удален");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при удалении шаблона: " + e.getMessage());
+        }
+        return "redirect:/admin/templates";
     }
 }

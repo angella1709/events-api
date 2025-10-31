@@ -9,6 +9,7 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -23,6 +24,7 @@ import java.util.Map;
 @Slf4j
 public class AccessCheckAspect {
 
+    @Lazy  // Ленивая инициализация чтобы разорвать цикл
     private final Map<AccessCheckType, AccessCheckerService> accessCheckServiceMap;
 
     @Before("@annotation(accessible)")
