@@ -9,6 +9,7 @@ import com.example.angella.eventsapi.repository.LocationRepository;
 import com.example.angella.eventsapi.repository.specification.EventSpecification;
 import com.example.angella.eventsapi.web.dto.UpdateEventRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -27,18 +28,19 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class EventService {
     private final EventRepository eventRepository;
     private final CategoryService categoryService;
     private final LocationRepository locationRepository;
     private final UserService userService;
     private final ImageService imageService;
+    private final ChatService chatService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<Event> findAll() {
         List<Event> events = eventRepository.findAll();
-        // Инициализируем ленивые коллекции
         events.forEach(this::initializeLazyCollections);
         return events;
     }
@@ -49,7 +51,6 @@ public class EventService {
                 EventSpecification.withFilter(filterModel),
                 filterModel.getPage().toPageRequest()
         );
-        // Инициализируем ленивые коллекции для каждой страницы
         page.getContent().forEach(this::initializeLazyCollections);
         return page;
     }
@@ -62,7 +63,6 @@ public class EventService {
                 ));
         initializeLazyCollections(event);
 
-        // Загружаем изображения для события
         List<Image> images = imageService.getEventImages(eventId);
         event.setImages(images != null ? new HashSet<>(images) : new HashSet<>());
 
@@ -75,14 +75,12 @@ public class EventService {
                 .orElseThrow(() -> new EntityNotFoundException("Event not found"));
         initializeLazyCollections(event);
 
-        // Загружаем изображения для события
         List<Image> images = imageService.getEventImages(id);
         event.setImages(images != null ? new HashSet<>(images) : new HashSet<>());
 
         return event;
     }
 
-    // Новый метод для детального просмотра
     @Transactional(readOnly = true)
     public Event getEventForDetailView(Long eventId) {
         Event event = eventRepository.findByIdWithRelations(eventId)
@@ -90,7 +88,6 @@ public class EventService {
 
         initializeLazyCollections(event);
 
-        // Загружаем изображения через сервис
         List<Image> eventImages = imageService.getEventImages(eventId);
         event.setImages(eventImages != null ? new HashSet<>(eventImages) : new HashSet<>());
 
@@ -109,6 +106,48 @@ public class EventService {
         event.setCreator(creator);
         event.addParticipant(creator);
         Event savedEvent = eventRepository.save(event);
+
+        // Автоматически создаем приветственное сообщение в чате
+        try {
+            chatService.createMessage(
+                    "Добро пожаловать в чат мероприятия!",
+                    savedEvent.getId(),
+                    creatorId
+            );
+            log.info("Created welcome message for event chat: {}", savedEvent.getId());
+        } catch (Exception e) {
+            log.warn("Failed to create welcome message in chat: {}", e.getMessage());
+        }
+
+        // Автоматически создаем пустые списки задач и чеклиста
+        try {
+            // Создаем приветственную задачу
+            taskService.createTask(
+                    "Организовать мероприятие",
+                    savedEvent.getId(),
+                    creatorId,
+                    null
+            );
+            log.info("Created default task for event: {}", savedEvent.getId());
+        } catch (Exception e) {
+            log.warn("Failed to create default task: {}", e.getMessage());
+        }
+
+        try {
+            // Создаем базовые элементы чеклиста
+            checklistService.createItem(
+                    "Подготовить место проведения",
+                    "Организовать пространство для мероприятия",
+                    1,
+                    savedEvent.getId(),
+                    creatorId,
+                    null
+            );
+            log.info("Created default checklist items for event: {}", savedEvent.getId());
+        } catch (Exception e) {
+            log.warn("Failed to create default checklist items: {}", e.getMessage());
+        }
+
         initializeLazyCollections(savedEvent);
         return savedEvent;
     }
@@ -117,12 +156,10 @@ public class EventService {
     public Event updateEvent(Long eventId, UpdateEventRequest request, Long currentUserId) {
         Event existingEvent = getByIdWithRelations(eventId);
 
-        // Проверка прав
         if (!existingEvent.getCreator().getId().equals(currentUserId)) {
             throw new AccessDeniedException("Only event creator can update the event");
         }
 
-        // Обновление простых полей
         if (StringUtils.isNotBlank(request.getName())) {
             existingEvent.setName(request.getName());
         }
@@ -133,7 +170,6 @@ public class EventService {
             existingEvent.setEndTime(request.getEndTime());
         }
 
-        // Обновление категорий
         if (!CollectionUtils.isEmpty(request.getCategories())) {
             Set<Category> updatedCategories = request.getCategories().stream()
                     .map(categoryName -> new Category(null, categoryName, null))
@@ -242,7 +278,6 @@ public class EventService {
     @Transactional(readOnly = true)
     public List<Event> findAllWithImages() {
         List<Event> events = eventRepository.findAll();
-        // Инициализируем ленивые коллекции и загружаем изображения
         events.forEach(event -> {
             initializeLazyCollections(event);
             List<Image> images = imageService.getEventImages(event.getId());
@@ -255,13 +290,11 @@ public class EventService {
     public List<Event> findFeaturedEvents() {
         List<Event> events = eventRepository.findAllOrderByStartTimeDesc();
 
-        // Фильтруем только будущие мероприятия
         Instant now = Instant.now();
         List<Event> futureEvents = events.stream()
                 .filter(event -> event.getStartTime().isAfter(now))
                 .collect(Collectors.toList());
 
-        // Инициализируем ленивые коллекции и загружаем изображения
         futureEvents.forEach(event -> {
             initializeLazyCollections(event);
             List<Image> images = imageService.getEventImages(event.getId());
@@ -275,13 +308,11 @@ public class EventService {
     public List<Event> findUpcomingEvents() {
         List<Event> events = eventRepository.findAllOrderByStartTimeAsc();
 
-        // Фильтруем только будущие мероприятия
         Instant now = Instant.now();
         List<Event> futureEvents = events.stream()
                 .filter(event -> event.getStartTime().isAfter(now))
                 .collect(Collectors.toList());
 
-        // Инициализируем ленивые коллекции и загружаем изображения
         futureEvents.forEach(event -> {
             initializeLazyCollections(event);
             List<Image> images = imageService.getEventImages(event.getId());
@@ -295,17 +326,15 @@ public class EventService {
     public List<Event> findUserEventsWithImages(Long userId) {
         User user = userService.findById(userId);
 
-        // Получаем все события и фильтруем по участникам
         List<Event> allEvents = eventRepository.findAll();
         Instant now = Instant.now();
 
         List<Event> userEvents = allEvents.stream()
                 .filter(event -> event.getParticipants().stream()
                         .anyMatch(participant -> participant.getId().equals(userId)))
-                .filter(event -> event.getStartTime().isAfter(now)) // Только будущие
+                .filter(event -> event.getStartTime().isAfter(now))
                 .collect(Collectors.toList());
 
-        // Инициализируем ленивые коллекции и загружаем изображения
         userEvents.forEach(event -> {
             initializeLazyCollections(event);
             List<Image> images = imageService.getEventImages(event.getId());
@@ -319,13 +348,11 @@ public class EventService {
     public List<Event> findAllFutureEvents() {
         List<Event> events = eventRepository.findAll();
 
-        // Фильтруем только будущие мероприятия
         Instant now = Instant.now();
         List<Event> futureEvents = events.stream()
                 .filter(event -> event.getStartTime().isAfter(now))
                 .collect(Collectors.toList());
 
-        // Инициализируем ленивые коллекции и загружаем изображения
         futureEvents.forEach(event -> {
             initializeLazyCollections(event);
             List<Image> images = imageService.getEventImages(event.getId());
@@ -335,25 +362,19 @@ public class EventService {
         return futureEvents;
     }
 
-    // Вспомогательный метод для инициализации ленивых коллекций
     private void initializeLazyCollections(Event event) {
-        // Инициализируем participants
         if (event.getParticipants() != null) {
-            event.getParticipants().size(); // Это загрузит коллекцию
+            event.getParticipants().size();
         }
-        // Инициализируем categories
         if (event.getCategories() != null) {
             event.getCategories().size();
         }
-        // Инициализируем comments
         if (event.getComments() != null) {
             event.getComments().size();
         }
-        // Инициализируем chatMessages
         if (event.getChatMessages() != null) {
             event.getChatMessages().size();
         }
-        // Инициализируем tasks
         if (event.getTasks() != null) {
             event.getTasks().size();
         }

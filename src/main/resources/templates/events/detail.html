@@ -237,6 +237,7 @@
         <div class="action-buttons mb-4">
             <th:block th:if="${!isParticipant}">
                 <form th:action="@{/event/{id}/join(id=${event.id})}" method="post" class="d-inline">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     <button type="submit" class="btn btn-primary btn-lg">
                         <i class="fas fa-user-plus me-2"></i>Присоединиться к мероприятию
                     </button>
@@ -249,6 +250,7 @@
                         <i class="fas fa-comments me-2"></i>Перейти в чат мероприятия
                     </a>
                     <form th:action="@{/event/{id}/leave(id=${event.id})}" method="post" class="d-inline">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                         <button type="submit" class="btn btn-outline-danger btn-lg">
                             <i class="fas fa-user-minus me-2"></i>Покинуть мероприятие
                         </button>
@@ -483,13 +485,11 @@
 
 <div layout:fragment="scripts">
     <script>
-        // Функция для открытия модального окна с изображением
         function openImageModal(imageSrc) {
             document.getElementById('modalImage').src = imageSrc;
             new bootstrap.Modal(document.getElementById('imageModal')).show();
         }
 
-        // Обработка загрузки изображений
         document.addEventListener('DOMContentLoaded', function() {
             const uploadForm = document.querySelector('.image-upload-section form');
             if (uploadForm) {
@@ -501,13 +501,11 @@
                         return;
                     }
 
-                    // Показываем индикатор загрузки
                     const submitBtn = this.querySelector('button[type="submit"]');
                     const originalText = submitBtn.innerHTML;
                     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Загрузка...';
                     submitBtn.disabled = true;
 
-                    // После загрузки перезагружаем страницу
                     setTimeout(() => {
                         window.location.reload();
                     }, 2000);

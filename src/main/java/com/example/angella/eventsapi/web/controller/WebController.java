@@ -439,4 +439,26 @@ public class WebController {
 
         return "redirect:/event/details/" + id + "?left=true";
     }
+
+    @GetMapping("/event/edit/{id}")
+    public String editEventForm(@PathVariable Long id, Model model, Authentication authentication) {
+        if (authentication == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            Event event = eventService.getById(id);
+            User user = userService.findByUsername(authentication.getName());
+
+            // Проверка прав доступа
+            if (!event.getCreator().getId().equals(user.getId())) {
+                return "redirect:/event/details/" + id + "?error=access_denied";
+            }
+
+            model.addAttribute("event", event);
+            return "events/edit";
+        } catch (Exception e) {
+            return "redirect:/events?error=not_found";
+        }
+    }
 }

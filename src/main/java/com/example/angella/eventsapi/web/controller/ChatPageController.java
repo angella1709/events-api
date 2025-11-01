@@ -6,7 +6,6 @@ import com.example.angella.eventsapi.service.EventService;
 import com.example.angella.eventsapi.service.TaskService;
 import com.example.angella.eventsapi.service.ChecklistService;
 import com.example.angella.eventsapi.service.UserService;
-import com.example.angella.eventsapi.utils.AuthUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/chats")
@@ -37,14 +35,13 @@ public class ChatPageController {
             }
 
             User user = userService.findByUsername(userDetails.getUsername());
-            // Используем метод для получения событий с изображениями
             List<Event> userEvents = eventService.findUserEventsWithImages(user.getId());
 
             model.addAttribute("events", userEvents);
             model.addAttribute("currentUser", user);
             return "chats/list";
         } catch (Exception e) {
-            model.addAttribute("error", "Ошибка загрузки чатов");
+            model.addAttribute("error", "Ошибка загрузки чатов: " + e.getMessage());
             return "chats/list";
         }
     }
@@ -54,12 +51,16 @@ public class ChatPageController {
                            @PathVariable Long eventId,
                            Model model) {
         try {
+            if (userDetails == null) {
+                return "redirect:/login";
+            }
+
             User user = userService.findByUsername(userDetails.getUsername());
-            // Используем метод для загрузки события с изображениями
             Event event = eventService.getEventForDetailView(eventId);
 
             // Проверяем, что пользователь является участником события
-            if (!event.getParticipants().contains(user)) {
+            if (!event.getParticipants().stream()
+                    .anyMatch(participant -> participant.getId().equals(user.getId()))) {
                 return "redirect:/chats?error=access_denied";
             }
 
@@ -71,8 +72,7 @@ public class ChatPageController {
 
             return "chats/room";
         } catch (Exception e) {
-            model.addAttribute("error", "Ошибка загрузки чата");
-            return "redirect:/chats";
+            return "redirect:/chats?error=not_found";
         }
     }
 }

@@ -11,6 +11,7 @@ import com.example.angella.eventsapi.repository.ChatMessageRepository;
 import com.example.angella.eventsapi.repository.EventRepository;
 import com.example.angella.eventsapi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class ChatService {
 
     private final ChatMessageRepository chatMessageRepository;
@@ -33,6 +35,11 @@ public class ChatService {
     private final ImageService imageService;
 
     public Page<ChatMessage> getMessages(Long eventId, PageModel pageModel) {
+        // Проверяем существование события
+        if (!eventRepository.existsById(eventId)) {
+            throw new EntityNotFoundException("Event not found");
+        }
+
         return chatMessageRepository.findAllByEventId(
                 eventId,
                 pageModel == null ? Pageable.unpaged() : pageModel.toPageRequest()
@@ -58,7 +65,8 @@ public class ChatService {
         message.setContent(content);
         message.setEvent(event);
         message.setAuthor(user);
-        message.setImages(new java.util.HashSet<>()); // Инициализируем коллекцию
+        message.setImages(new java.util.HashSet<>());
+        message.setEdited(false);
 
         return chatMessageRepository.save(message);
     }
@@ -86,7 +94,6 @@ public class ChatService {
             throw new AccessDeniedException("Only message author can delete the message");
         }
 
-        // Удаляем связанные изображения
         if (message.getImages() != null && !message.getImages().isEmpty()) {
             for (Image image : message.getImages()) {
                 imageService.deleteImage(image.getId(), userId);
@@ -100,8 +107,6 @@ public class ChatService {
         return chatMessageRepository.existsByIdAndAuthorId(messageId, userId);
     }
 
-    // НОВЫЕ МЕТОДЫ ДЛЯ РАБОТЫ С ИЗОБРАЖЕНИЯМИ
-
     public ChatMessage addImageToMessage(Long messageId, MultipartFile imageFile, Long userId) {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new EntityNotFoundException("Message not found"));
@@ -111,16 +116,14 @@ public class ChatService {
         }
 
         try {
-            // Сохраняем изображение и связываем с сообщением
             Image image = imageService.saveImageForChat(message, imageFile);
 
-            // Инициализируем коллекцию если она null
             if (message.getImages() == null) {
                 message.setImages(new java.util.HashSet<>());
             }
 
             message.getImages().add(image);
-            message.setEdited(true); // Помечаем как отредактированное
+            message.setEdited(true);
 
             return chatMessageRepository.save(message);
         } catch (IOException e) {
@@ -147,17 +150,14 @@ public class ChatService {
             throw new AccessDeniedException("Only message author can remove images");
         }
 
-        // Проверяем, что изображение принадлежит этому сообщению
         Image imageToRemove = message.getImages().stream()
                 .filter(image -> image.getId().equals(imageId))
                 .findFirst()
                 .orElseThrow(() -> new EntityNotFoundException("Image not found in this message"));
 
-        // Удаляем изображение из коллекции
         message.getImages().remove(imageToRemove);
         message.setEdited(true);
 
-        // Удаляем файл изображения
         imageService.deleteImage(imageId, userId);
 
         chatMessageRepository.save(message);

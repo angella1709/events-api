@@ -28,15 +28,16 @@ public class AdminController {
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        // Статистика
         List<User> users = userService.findAllUsers();
         List<Event> events = eventService.findAll();
         List<Event> upcomingEvents = eventService.findUpcomingEvents();
+        List<ChecklistTemplate> templates = templateService.getAllTemplates();
 
         model.addAttribute("totalUsers", users.size());
         model.addAttribute("totalEvents", events.size());
         model.addAttribute("upcomingEvents", upcomingEvents.size());
         model.addAttribute("recentUsers", users.size() > 5 ? users.subList(0, 5) : users);
+        model.addAttribute("templates", templates);
 
         return "admin/dashboard";
     }
@@ -80,7 +81,22 @@ public class AdminController {
     @GetMapping("/events")
     public String eventManagement(Model model) {
         List<Event> events = eventService.findAll();
+        List<Event> upcomingEvents = eventService.findUpcomingEvents();
+
+        long totalParticipants = events.stream()
+                .mapToLong(event -> event.getParticipants().size())
+                .sum();
+
+        long activeEvents = events.stream()
+                .filter(event -> event.getStartTime().isBefore(java.time.Instant.now())
+                        && event.getEndTime().isAfter(java.time.Instant.now()))
+                .count();
+
         model.addAttribute("events", events);
+        model.addAttribute("upcomingEvents", upcomingEvents);
+        model.addAttribute("totalParticipants", totalParticipants);
+        model.addAttribute("activeEvents", activeEvents);
+
         return "admin/events";
     }
 
@@ -97,7 +113,8 @@ public class AdminController {
 
     @GetMapping("/templates")
     public String templateManagement(Model model) {
-        model.addAttribute("templates", templateService.getAllTemplates());
+        List<ChecklistTemplate> templates = templateService.getAllTemplates();
+        model.addAttribute("templates", templates);
         return "admin/templates";
     }
 
