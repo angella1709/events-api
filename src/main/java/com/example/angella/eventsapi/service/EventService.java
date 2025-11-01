@@ -61,6 +61,11 @@ public class EventService {
                         MessageFormat.format("Event with id {0} not found!", eventId)
                 ));
         initializeLazyCollections(event);
+
+        // Загружаем изображения для события
+        List<Image> images = imageService.getEventImages(eventId);
+        event.setImages(images != null ? new HashSet<>(images) : new HashSet<>());
+
         return event;
     }
 
@@ -69,6 +74,26 @@ public class EventService {
         Event event = eventRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new EntityNotFoundException("Event not found"));
         initializeLazyCollections(event);
+
+        // Загружаем изображения для события
+        List<Image> images = imageService.getEventImages(id);
+        event.setImages(images != null ? new HashSet<>(images) : new HashSet<>());
+
+        return event;
+    }
+
+    // Новый метод для детального просмотра
+    @Transactional(readOnly = true)
+    public Event getEventForDetailView(Long eventId) {
+        Event event = eventRepository.findByIdWithRelations(eventId)
+                .orElseThrow(() -> new EntityNotFoundException("Event not found"));
+
+        initializeLazyCollections(event);
+
+        // Загружаем изображения через сервис
+        List<Image> eventImages = imageService.getEventImages(eventId);
+        event.setImages(eventImages != null ? new HashSet<>(eventImages) : new HashSet<>());
+
         return event;
     }
 

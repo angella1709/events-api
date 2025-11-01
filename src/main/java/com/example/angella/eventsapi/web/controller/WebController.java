@@ -180,8 +180,6 @@ public class WebController {
         return "auth/register";
     }
 
-    // В класс WebController добавьте:
-
     @GetMapping("/profile")
     public String profile(Model model, Authentication authentication) {
         if (authentication == null) {
@@ -351,7 +349,8 @@ public class WebController {
     public String eventDetail(@PathVariable Long id, Model model,
                               @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            Event event = eventService.getByIdWithRelations(id);
+            // Используем новый метод для загрузки события с изображениями
+            Event event = eventService.getEventForDetailView(id);
             boolean isParticipant = false;
             boolean isCreator = false;
 
@@ -361,9 +360,9 @@ public class WebController {
                 isCreator = event.getCreator().getId().equals(currentUser.getId());
             }
 
-            // Получаем изображения мероприятия
-            List<Image> eventImages = eventService.getEventImages(id);
-            Image mainImage = eventService.getMainEventImage(id);
+            // Получаем изображения мероприятия через сервис
+            List<Image> eventImages = imageService.getEventImages(id);
+            Image mainImage = eventImages.isEmpty() ? null : eventImages.get(0);
 
             model.addAttribute("event", event);
             model.addAttribute("isParticipant", isParticipant);
@@ -375,6 +374,39 @@ public class WebController {
             model.addAttribute("mainImage", mainImage);
 
             return "events/detail";
+        } catch (Exception e) {
+            log.error("Error loading event detail page for id: {}", id, e);
+            model.addAttribute("error", "Мероприятие не найдено");
+            return "error/404";
+        }
+    }
+
+    // Упрощенная версия деталей мероприятия
+    @GetMapping("/event/details-simple/{id}")
+    public String eventDetailSimple(@PathVariable Long id, Model model,
+                                    @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            Event event = eventService.getEventForDetailView(id);
+            boolean isParticipant = false;
+            boolean isCreator = false;
+
+            if (userDetails != null) {
+                User currentUser = userService.findByUsername(userDetails.getUsername());
+                isParticipant = event.getParticipants().contains(currentUser);
+                isCreator = event.getCreator().getId().equals(currentUser.getId());
+            }
+
+            // Получаем изображения мероприятия
+            List<Image> eventImages = imageService.getEventImages(id);
+            Image mainImage = eventImages.isEmpty() ? null : eventImages.get(0);
+
+            model.addAttribute("event", event);
+            model.addAttribute("isParticipant", isParticipant);
+            model.addAttribute("isCreator", isCreator);
+            model.addAttribute("eventImages", eventImages);
+            model.addAttribute("mainImage", mainImage);
+
+            return "events/detail-simple";
         } catch (Exception e) {
             log.error("Error loading event detail page for id: {}", id, e);
             model.addAttribute("error", "Мероприятие не найдено");

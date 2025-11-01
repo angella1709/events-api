@@ -24,7 +24,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final ImageRepository imageRepository; // Используем репозиторий вместо сервиса
+    private final ImageRepository imageRepository;
 
     @Transactional
     public User registerUser(User user) {
@@ -65,7 +65,25 @@ public class UserService {
 
     @PreAuthorize("hasRole('ADMIN')")
     public List<User> findAllUsers() {
-        return userRepository.findAll();
+        List<User> users = userRepository.findAll();
+        // Безопасная инициализация ленивых коллекций
+        users.forEach(user -> {
+            try {
+                if (user.getCreatedEvents() != null) {
+                    user.getCreatedEvents().size();
+                }
+            } catch (Exception e) {
+                // Игнорируем ошибки инициализации для createdEvents
+            }
+            try {
+                if (user.getEvents() != null) {
+                    user.getEvents().size();
+                }
+            } catch (Exception e) {
+                // Игнорируем ошибки инициализации для events
+            }
+        });
+        return users;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -85,23 +103,17 @@ public class UserService {
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
     public void deleteUser(Long userId) {
-        User user = findById(userId);
+        try {
+            User user = findById(userId);
+            System.out.println("Deleting user: " + user.getUsername());
 
-        // Удаляем аватар пользователя если он не дефолтный через репозиторий
-        if (user.getAvatar() != null && !user.getAvatar().getFilename().equals("default-avatar.png")) {
-            try {
-                // Удаляем файл изображения
-                java.nio.file.Path filePath = java.nio.file.Paths.get(user.getAvatar().getFilePath());
-                java.nio.file.Files.deleteIfExists(filePath);
-                // Удаляем запись из БД
-                imageRepository.delete(user.getAvatar());
-            } catch (Exception e) {
-                // Логируем ошибку, но продолжаем удаление пользователя
-                System.err.println("Failed to delete user avatar: " + e.getMessage());
-            }
+            // Простое удаление - надеемся на каскады в БД
+            userRepository.delete(user);
+
+        } catch (Exception e) {
+            System.err.println("Error deleting user: " + e.getMessage());
+            throw new RuntimeException("Cannot delete user: " + e.getMessage(), e);
         }
-
-        userRepository.delete(user);
     }
 
     @Transactional

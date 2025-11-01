@@ -44,7 +44,6 @@
             justify-content: center;
             color: white;
             font-size: 1.5rem;
-            margin-bottom: 1rem;
         }
         .image-gallery {
             display: grid;
@@ -82,6 +81,63 @@
             border-radius: 4px;
             font-size: 0.875rem;
         }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+        }
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .action-buttons {
+            margin-bottom: 2rem;
+        }
+        .info-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .info-item {
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .participant-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .avatar-placeholder {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+        }
+        .comment-item {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .comment-item:last-child {
+            border-bottom: none;
+        }
+        .chat-feature {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
     </style>
 </head>
 <body>
@@ -91,8 +147,15 @@
         <div class="container event-header-content">
             <div class="row align-items-center">
                 <div class="col-md-8">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb bg-transparent text-white mb-3">
+                            <li class="breadcrumb-item"><a th:href="@{/}" class="text-white">Главная</a></li>
+                            <li class="breadcrumb-item"><a th:href="@{/events}" class="text-white">Мероприятия</a></li>
+                            <li class="breadcrumb-item active text-white" th:text="${event.name}"></li>
+                        </ol>
+                    </nav>
                     <h1 th:text="${event.name}">Название мероприятия</h1>
-                    <p class="lead mb-0" th:text="${event.schedule?.description}">Описание мероприятия</p>
+                    <p class="lead mb-0" th:text="${event.description}">Описание мероприятия</p>
                 </div>
                 <div class="col-md-4 text-end">
                     <div th:if="${isCreator}" class="creator-badge">
@@ -173,117 +236,229 @@
         <!-- Кнопки действий -->
         <div class="action-buttons mb-4">
             <th:block th:if="${!isParticipant}">
-                <form th:action="@{/event/{id}/join(id=${event.id})}" method="post">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-user-plus me-2"></i>Присоединиться
+                <form th:action="@{/event/{id}/join(id=${event.id})}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-user-plus me-2"></i>Присоединиться к мероприятию
                     </button>
                 </form>
             </th:block>
 
             <th:block th:if="${isParticipant}">
-                <a th:href="@{/chats/{id}(id=${event.id})}" class="btn btn-success">
-                    <i class="fas fa-comments me-2"></i>Перейти в чат
-                </a>
-                <form th:action="@{/event/{id}/leave(id=${event.id})}" method="post" class="d-inline">
-                    <button type="submit" class="btn btn-outline-danger">
-                        <i class="fas fa-user-minus me-2"></i>Покинуть мероприятие
-                    </button>
-                </form>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a th:href="@{/chats/{id}(id=${event.id})}" class="btn btn-success btn-lg">
+                        <i class="fas fa-comments me-2"></i>Перейти в чат мероприятия
+                    </a>
+                    <form th:action="@{/event/{id}/leave(id=${event.id})}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-outline-danger btn-lg">
+                            <i class="fas fa-user-minus me-2"></i>Покинуть мероприятие
+                        </button>
+                    </form>
+                </div>
             </th:block>
 
             <th:block th:if="${isCreator}">
-                <a th:href="@{/event/edit/{id}(id=${event.id})}" class="btn btn-warning">
-                    <i class="fas fa-edit me-2"></i>Редактировать
-                </a>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a th:href="@{/event/edit/{id}(id=${event.id})}" class="btn btn-warning btn-lg">
+                        <i class="fas fa-edit me-2"></i>Редактировать мероприятие
+                    </a>
+                    <a th:href="@{/chats/{id}(id=${event.id})}" class="btn btn-info btn-lg">
+                        <i class="fas fa-cog me-2"></i>Управление чатом
+                    </a>
+                </div>
             </th:block>
         </div>
 
-        <!-- Остальная часть шаблона (информация, комментарии, задачи и т.д.) -->
+        <!-- Блок с призывом к чату для участников -->
+        <th:block th:if="${isParticipant}">
+            <div class="chat-feature">
+                <h3><i class="fas fa-comments me-2"></i>Чат мероприятия</h3>
+                <p class="mb-3">Общайтесь с другими участниками, координируйте задачи и планируйте мероприятие вместе!</p>
+                <a th:href="@{/chats/{id}(id=${event.id})}" class="btn btn-light btn-lg">
+                    <i class="fas fa-arrow-right me-2"></i>Перейти в чат
+                </a>
+            </div>
+        </th:block>
+
         <div class="info-grid">
             <!-- Левая колонка -->
             <div>
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Информация</h5>
+                <!-- Подробное описание -->
+                <div class="card info-card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-align-left me-2"></i>Описание мероприятия</h5>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <strong><i class="fas fa-calendar me-2 text-primary"></i>Дата и время:</strong><br>
-                            <span th:text="${#temporals.format(event.startTime, 'dd.MM.yyyy HH:mm')} + ' - ' + ${#temporals.format(event.endTime, 'HH:mm')}">
-                                01.01.2024 12:00 - 18:00
-                            </span>
-                        </div>
-                        <div class="mb-3">
-                            <strong><i class="fas fa-map-marker-alt me-2 text-primary"></i>Место:</strong><br>
-                            <span th:text="${event.location.city + ', ' + event.location.street}">
-                                Город, Улица
-                            </span>
-                        </div>
-                        <div class="mb-3">
-                            <strong><i class="fas fa-tags me-2 text-primary"></i>Категории:</strong><br>
-                            <th:block th:each="category : ${event.categories}">
-                                <span class="badge bg-primary me-1" th:text="${category.name}">Категория</span>
-                            </th:block>
-                        </div>
-                        <div>
-                            <strong><i class="fas fa-user me-2 text-primary"></i>Организатор:</strong><br>
-                            <span th:text="${event.creator.username}">username</span>
+                        <p th:text="${event.description}" class="mb-0" style="white-space: pre-line;">Описание мероприятия</p>
+                    </div>
+                </div>
+
+                <!-- Участники -->
+                <div class="card info-card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-users me-2"></i>Участники</h5>
+                        <span class="badge bg-primary" th:text="${event.participants.size()}">0</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div th:each="participant : ${event.participants}"
+                                 class="col-6 col-md-4 col-lg-3 mb-3">
+                                <div class="d-flex align-items-center">
+                                    <th:block th:if="${participant.avatar != null}">
+                                        <img th:src="@{/images/{filename}(filename=${participant.avatar.filename})}"
+                                             class="participant-avatar me-2"
+                                             th:alt="${participant.username}">
+                                    </th:block>
+                                    <th:block th:unless="${participant.avatar != null}">
+                                        <div class="avatar-placeholder me-2">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                    </th:block>
+                                    <div>
+                                        <div class="fw-medium" th:text="${participant.username}">username</div>
+                                        <th:block th:if="${participant.id == event.creator.id}">
+                                            <small class="text-muted">Организатор</small>
+                                        </th:block>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Комментарии -->
-                <div class="card">
-                    <div class="card-header">
+                <div class="card info-card">
+                    <div class="card-header bg-light">
                         <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Комментарии</h5>
                     </div>
                     <div class="card-body">
                         <th:block th:if="${isParticipant}">
-                            <form th:action="@{/api/v1/comment}" method="post" class="mb-3">
+                            <form th:action="@{/api/v1/comment}" method="post" class="mb-4">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                 <input type="hidden" name="eventId" th:value="${event.id}">
-                                <div class="mb-2">
-                                    <textarea name="text" class="form-control" placeholder="Добавить комментарий..." required></textarea>
+                                <div class="mb-3">
+                                    <textarea name="text" class="form-control"
+                                              placeholder="Добавить комментарий..."
+                                              rows="3" required></textarea>
                                 </div>
-                                <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
+                                <button type="submit" class="btn btn-primary btn-sm">Отправить комментарий</button>
                             </form>
                         </th:block>
 
                         <div id="commentsList">
-                            <div th:each="comment : ${comments}" class="comment-item mb-3 p-2 border rounded">
-                                <div class="d-flex justify-content-between">
-                                    <strong th:text="${comment.author}">Автор</strong>
-                                    <small class="text-muted" th:text="${#temporals.format(comment.createdAt, 'dd.MM.yyyy HH:mm')}">
-                                        01.01.2024 12:00
-                                    </small>
+                            <th:block th:if="${not #lists.isEmpty(comments)}">
+                                <div th:each="comment : ${comments}" class="comment-item">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="fw-medium" th:text="${comment.user.username}">Автор</div>
+                                        <small class="text-muted"
+                                               th:text="${#temporals.format(comment.createdAt, 'dd.MM.yyyy HH:mm')}">
+                                            01.01.2024 12:00
+                                        </small>
+                                    </div>
+                                    <p class="mb-0" th:text="${comment.text}">Текст комментария</p>
                                 </div>
-                                <p class="mb-0" th:text="${comment.text}">Текст комментария</p>
-                            </div>
+                            </th:block>
+                            <th:block th:if="${#lists.isEmpty(comments)}">
+                                <p class="text-muted text-center mb-0">Пока нет комментариев</p>
+                            </th:block>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Правая колонка (задачи и список вещей) -->
+            <!-- Правая колонка -->
             <div>
-                <!-- Задачи -->
-                <div class="card mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Задачи</h5>
-                        <span class="badge bg-primary" th:text="${tasks.size()}">0</span>
+                <!-- Информация о мероприятии -->
+                <div class="card info-card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Информация</h5>
                     </div>
                     <div class="card-body">
-                        <!-- ... существующий код задач ... -->
+                        <div class="info-item">
+                            <strong><i class="fas fa-calendar me-2 text-primary"></i>Дата и время:</strong><br>
+                            <span th:text="${#temporals.format(event.startTime, 'dd.MM.yyyy HH:mm')} + ' - ' + ${#temporals.format(event.endTime, 'HH:mm')}">
+                                01.01.2024 12:00 - 18:00
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <strong><i class="fas fa-map-marker-alt me-2 text-primary"></i>Место:</strong><br>
+                            <span th:text="${event.location.city + ', ' + event.location.street}">
+                                Город, Улица
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <strong><i class="fas fa-tags me-2 text-primary"></i>Категории:</strong><br>
+                            <th:block th:each="category : ${event.categories}">
+                                <span class="badge bg-primary me-1 mb-1" th:text="${category.name}">Категория</span>
+                            </th:block>
+                        </div>
+                        <div class="info-item">
+                            <strong><i class="fas fa-user me-2 text-primary"></i>Организатор:</strong><br>
+                            <span th:text="${event.creator.username}">username</span>
+                        </div>
+                        <div class="info-item">
+                            <strong><i class="fas fa-users me-2 text-primary"></i>Участников:</strong><br>
+                            <span th:text="${event.participants.size()}">0</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Список вещей -->
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-list-check me-2"></i>Список вещей</h5>
-                        <span class="badge bg-success" th:text="${checklist.size()}">0</span>
+                <!-- Статус мероприятия -->
+                <div class="card info-card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Статус</h5>
                     </div>
                     <div class="card-body">
-                        <!-- ... существующий код списка вещей ... -->
+                        <th:block th:with="now=${#temporals.createNow()}">
+                            <th:block th:if="${event.startTime.isAfter(now)}">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-clock me-2"></i>
+                                    <strong>Предстоящее</strong><br>
+                                    <small>Мероприятие начнется
+                                        <span th:text="${#temporals.format(event.startTime, 'dd.MM.yyyy')}">
+                                            в ближайшее время
+                                        </span>
+                                    </small>
+                                </div>
+                            </th:block>
+                            <th:block th:if="${event.startTime.isBefore(now) and event.endTime.isAfter(now)}">
+                                <div class="alert alert-success mb-0">
+                                    <i class="fas fa-play-circle me-2"></i>
+                                    <strong>Идет сейчас</strong><br>
+                                    <small>Мероприятие активно</small>
+                                </div>
+                            </th:block>
+                            <th:block th:if="${event.endTime.isBefore(now)}">
+                                <div class="alert alert-secondary mb-0">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <strong>Завершено</strong><br>
+                                    <small>Мероприятие закончилось</small>
+                                </div>
+                            </th:block>
+                        </th:block>
+                    </div>
+                </div>
+
+                <!-- Быстрые действия -->
+                <div class="card info-card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Быстрые действия</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <th:block th:if="${isParticipant}">
+                                <a th:href="@{/chats/{id}(id=${event.id})}" class="btn btn-primary">
+                                    <i class="fas fa-comments me-2"></i>Чат мероприятия
+                                </a>
+                            </th:block>
+                            <a th:href="@{/events}" class="btn btn-outline-primary">
+                                <i class="fas fa-calendar me-2"></i>Все мероприятия
+                            </a>
+                            <th:block th:if="${isCreator}">
+                                <a th:href="@{/event/edit/{id}(id=${event.id})}" class="btn btn-outline-warning">
+                                    <i class="fas fa-edit me-2"></i>Редактировать
+                                </a>
+                            </th:block>
+                        </div>
                     </div>
                 </div>
             </div>

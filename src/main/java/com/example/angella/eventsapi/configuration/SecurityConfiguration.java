@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.thymeleaf.spring6.expression.ThymeleafEvaluationContext;
 
 @Configuration
 @EnableMethodSecurity
@@ -55,6 +56,8 @@ public class SecurityConfiguration {
 
                                 // API endpoints (должны быть после публичных)
                                 .requestMatchers("/api/v1/**").authenticated()
+
+                                .requestMatchers("/chats/**").authenticated()
 
                                 // Публичные страницы
                                 .requestMatchers("/", "/home", "/events", "/event/details/**",

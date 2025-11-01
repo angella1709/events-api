@@ -1,4 +1,3 @@
-// FILE: src/main/java/com/example/angella/eventsapi/web/controller/ChatPageController.java
 package com.example.angella.eventsapi.web.controller;
 
 import com.example.angella.eventsapi.entity.Event;
@@ -33,9 +32,13 @@ public class ChatPageController {
     @GetMapping
     public String chatsPage(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         try {
-            User user = userService.findByIdWithEvents(Long.valueOf(userDetails.getUsername()));
-            List<Event> userEvents = user.getEvents().stream()
-                    .collect(Collectors.toList());
+            if (userDetails == null) {
+                return "redirect:/login";
+            }
+
+            User user = userService.findByUsername(userDetails.getUsername());
+            // Используем метод для получения событий с изображениями
+            List<Event> userEvents = eventService.findUserEventsWithImages(user.getId());
 
             model.addAttribute("events", userEvents);
             model.addAttribute("currentUser", user);
@@ -51,8 +54,9 @@ public class ChatPageController {
                            @PathVariable Long eventId,
                            Model model) {
         try {
-            User user = userService.findByIdWithEvents(Long.valueOf(userDetails.getUsername()));
-            Event event = eventService.getByIdWithRelations(eventId);
+            User user = userService.findByUsername(userDetails.getUsername());
+            // Используем метод для загрузки события с изображениями
+            Event event = eventService.getEventForDetailView(eventId);
 
             // Проверяем, что пользователь является участником события
             if (!event.getParticipants().contains(user)) {
