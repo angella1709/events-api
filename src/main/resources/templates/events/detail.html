@@ -410,15 +410,16 @@
                         <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Статус</h5>
                     </div>
                     <div class="card-body">
-                        <th:block th:with="now=${#temporals.createNow()}">
+                        <!-- В файле src/main/resources/templates/events/detail.html замените блок статуса: -->
+                        <th:block th:with="now=${T(java.time.Instant).now()}">
                             <th:block th:if="${event.startTime.isAfter(now)}">
                                 <div class="alert alert-info mb-0">
                                     <i class="fas fa-clock me-2"></i>
                                     <strong>Предстоящее</strong><br>
                                     <small>Мероприятие начнется
                                         <span th:text="${#temporals.format(event.startTime, 'dd.MM.yyyy')}">
-                                            в ближайшее время
-                                        </span>
+                    в ближайшее время
+                </span>
                                     </small>
                                 </div>
                             </th:block>

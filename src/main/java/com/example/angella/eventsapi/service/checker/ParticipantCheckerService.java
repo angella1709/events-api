@@ -1,7 +1,7 @@
 package com.example.angella.eventsapi.service.checker;
 
 import com.example.angella.eventsapi.aop.AccessCheckType;
-import com.example.angella.eventsapi.service.EventService;
+import com.example.angella.eventsapi.service.EventAccessService;
 import com.example.angella.eventsapi.utils.AuthUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -11,11 +11,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ParticipantCheckerService extends AbstractAccessCheckerService<ParticipantCheckerService.ParticipantAccessData> {
 
-    private final EventService eventService;
+    private final EventAccessService eventAccessService;
 
     @Override
     protected boolean check(ParticipantAccessData accessData) {
-        return eventService.hasParticipant(accessData.eventId(), accessData.participantId());
+        return eventAccessService.hasParticipant(accessData.eventId(), accessData.participantId());
     }
 
     @Override

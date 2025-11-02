@@ -28,9 +28,6 @@ spring:
       content-type: text/html
   mvc:
     static-path-pattern: /**
-    hiddenmethod:
-      filter:
-        enabled: true
   web:
     resources:
       static-locations: classpath:/static/,classpath:/public/,file:${app.upload.dir:uploads}/

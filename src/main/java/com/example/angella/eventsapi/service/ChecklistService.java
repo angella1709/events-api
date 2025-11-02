@@ -23,6 +23,7 @@ public class ChecklistService {
     private final ChecklistItemRepository checklistItemRepository;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final EventAccessService eventAccessService;
 
     public List<ChecklistItem> getChecklistForEvent(Long eventId) {
         return checklistItemRepository.findAllByEventId(eventId);
@@ -33,7 +34,7 @@ public class ChecklistService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event not found"));
 
-        if (!eventRepository.existsByIdAndParticipantsId(eventId, userId)) {
+        if (!eventAccessService.hasParticipant(eventId, userId)) {
             throw new AccessDeniedException("Only event participants can create checklist items");
         }
 
@@ -45,7 +46,7 @@ public class ChecklistService {
             assignedUser = userRepository.findById(assignedUserId)
                     .orElseThrow(() -> new EntityNotFoundException("Assigned user not found"));
             // Проверяем, что назначенный пользователь является участником события
-            if (!eventRepository.existsByIdAndParticipantsId(eventId, assignedUserId)) {
+            if (!eventAccessService.hasParticipant(eventId, assignedUserId)) {
                 throw new AccessDeniedException("Assigned user must be event participant");
             }
         }
@@ -79,7 +80,7 @@ public class ChecklistService {
             User assignedUser = userRepository.findById(assignedUserId)
                     .orElseThrow(() -> new EntityNotFoundException("Assigned user not found"));
             // Проверяем, что назначенный пользователь является участником события
-            if (!eventRepository.existsByIdAndParticipantsId(item.getEvent().getId(), assignedUserId)) {
+            if (!eventAccessService.hasParticipant(item.getEvent().getId(), assignedUserId)) {
                 throw new AccessDeniedException("Assigned user must be event participant");
             }
             item.setAssignedUser(assignedUser);
@@ -104,7 +105,7 @@ public class ChecklistService {
                 .orElseThrow(() -> new EntityNotFoundException("Checklist item not found"));
 
         // Любой участник события может отмечать выполнение
-        if (!eventRepository.existsByIdAndParticipantsId(item.getEvent().getId(), userId)) {
+        if (!eventAccessService.hasParticipant(item.getEvent().getId(), userId)) {
             throw new AccessDeniedException("Only event participants can toggle item completion");
         }
 

@@ -37,6 +37,9 @@ public class EventService {
     private final ImageService imageService;
     private final ChatService chatService;
     private final ApplicationEventPublisher eventPublisher;
+    private final EventAccessService eventAccessService;
+    private final TaskService taskService;
+    private final ChecklistService checklistService;
 
     @Transactional(readOnly = true)
     public List<Event> findAll() {
@@ -86,7 +89,22 @@ public class EventService {
         Event event = eventRepository.findByIdWithRelations(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event not found"));
 
-        initializeLazyCollections(event);
+        // Явная инициализация ленивых коллекций
+        if (event.getParticipants() != null) {
+            event.getParticipants().size();
+        }
+        if (event.getComments() != null) {
+            event.getComments().size();
+        }
+        if (event.getCategories() != null) {
+            event.getCategories().size();
+        }
+        if (event.getChatMessages() != null) {
+            event.getChatMessages().size();
+        }
+        if (event.getTasks() != null) {
+            event.getTasks().size();
+        }
 
         List<Image> eventImages = imageService.getEventImages(eventId);
         event.setImages(eventImages != null ? new HashSet<>(eventImages) : new HashSet<>());
@@ -96,67 +114,58 @@ public class EventService {
 
     @Transactional
     public Event create(Event event, Long creatorId) {
-        event.setCategories(categoryService.upsertCategories(event.getCategories()));
-        var location = locationRepository.findByCityAndStreet(
-                        event.getLocation().getCity(),
-                        event.getLocation().getStreet())
-                .orElseGet(() -> locationRepository.save(event.getLocation()));
-        event.setLocation(location);
-        User creator = userService.findById(creatorId);
-        event.setCreator(creator);
-        event.addParticipant(creator);
-        Event savedEvent = eventRepository.save(event);
-
-        // Автоматически создаем приветственное сообщение в чате
         try {
-            chatService.createMessage(
-                    "Добро пожаловать в чат мероприятия!",
-                    savedEvent.getId(),
-                    creatorId
-            );
-            log.info("Created welcome message for event chat: {}", savedEvent.getId());
+            event.setCategories(categoryService.upsertCategories(event.getCategories()));
+            var location = locationRepository.findByCityAndStreet(
+                            event.getLocation().getCity(),
+                            event.getLocation().getStreet())
+                    .orElseGet(() -> locationRepository.save(event.getLocation()));
+            event.setLocation(location);
+            User creator = userService.findById(creatorId);
+            event.setCreator(creator);
+            event.addParticipant(creator);
+            Event savedEvent = eventRepository.save(event);
+
+            // Создание дополнительных сущностей с обработкой ошибок
+            createEventAdditionalEntities(savedEvent, creatorId);
+
+            initializeLazyCollections(savedEvent);
+            return savedEvent;
+        } catch (Exception e) {
+            log.error("Failed to create event", e);
+            throw new RuntimeException("Failed to create event: " + e.getMessage(), e);
+        }
+    }
+
+    private void createEventAdditionalEntities(Event event, Long creatorId) {
+        try {
+            chatService.createMessage("Добро пожаловать в чат мероприятия!", event.getId(), creatorId);
+            log.info("Created welcome message for event chat: {}", event.getId());
         } catch (Exception e) {
             log.warn("Failed to create welcome message in chat: {}", e.getMessage());
         }
 
-        // Автоматически создаем пустые списки задач и чеклиста
         try {
-            // Создаем приветственную задачу
-            taskService.createTask(
-                    "Организовать мероприятие",
-                    savedEvent.getId(),
-                    creatorId,
-                    null
-            );
-            log.info("Created default task for event: {}", savedEvent.getId());
+            taskService.createTask("Организовать мероприятие", event.getId(), creatorId, null);
+            log.info("Created default task for event: {}", event.getId());
         } catch (Exception e) {
             log.warn("Failed to create default task: {}", e.getMessage());
         }
 
         try {
-            // Создаем базовые элементы чеклиста
-            checklistService.createItem(
-                    "Подготовить место проведения",
-                    "Организовать пространство для мероприятия",
-                    1,
-                    savedEvent.getId(),
-                    creatorId,
-                    null
-            );
-            log.info("Created default checklist items for event: {}", savedEvent.getId());
+            checklistService.createItem("Подготовить место проведения",
+                    "Организовать пространство для мероприятия", 1, event.getId(), creatorId, null);
+            log.info("Created default checklist items for event: {}", event.getId());
         } catch (Exception e) {
             log.warn("Failed to create default checklist items: {}", e.getMessage());
         }
-
-        initializeLazyCollections(savedEvent);
-        return savedEvent;
     }
 
     @Transactional
     public Event updateEvent(Long eventId, UpdateEventRequest request, Long currentUserId) {
         Event existingEvent = getByIdWithRelations(eventId);
 
-        if (!existingEvent.getCreator().getId().equals(currentUserId)) {
+        if (!eventAccessService.isEventCreator(eventId, currentUserId)) {
             throw new AccessDeniedException("Only event creator can update the event");
         }
 
@@ -229,18 +238,18 @@ public class EventService {
     @Transactional
     public void deleteById(Long id, Long currentUserId) {
         Event event = getById(id);
-        if (!event.getCreator().getId().equals(currentUserId)) {
+        if (!eventAccessService.isEventCreator(id, currentUserId)) {
             throw new AccessDeniedException("Only event creator can delete the event");
         }
         eventRepository.deleteById(id);
     }
 
     public boolean hasParticipant(Long eventId, Long participantId) {
-        return eventRepository.existsByIdAndParticipantsId(eventId, participantId);
+        return eventAccessService.hasParticipant(eventId, participantId);
     }
 
     public boolean isEventCreator(Long eventId, Long userId) {
-        return eventRepository.existsByIdAndCreatorId(eventId, userId);
+        return eventAccessService.isEventCreator(eventId, userId);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -266,6 +275,9 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public List<Image> getEventImages(Long eventId) {
+        if (!eventRepository.existsById(eventId)) {
+            throw new EntityNotFoundException("Event not found");
+        }
         return imageService.getEventImages(eventId);
     }
 
@@ -360,6 +372,17 @@ public class EventService {
         });
 
         return futureEvents;
+    }
+
+    public String getEventStatus(Event event) {
+        Instant now = Instant.now();
+        if (event.getStartTime().isAfter(now)) {
+            return "UPCOMING";
+        } else if (event.getStartTime().isBefore(now) && event.getEndTime().isAfter(now)) {
+            return "ACTIVE";
+        } else {
+            return "COMPLETED";
+        }
     }
 
     private void initializeLazyCollections(Event event) {

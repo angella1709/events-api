@@ -1,7 +1,7 @@
 package com.example.angella.eventsapi.service.checker;
 
 import com.example.angella.eventsapi.aop.AccessCheckType;
-import com.example.angella.eventsapi.service.EventService;
+import com.example.angella.eventsapi.service.EventAccessService;
 import com.example.angella.eventsapi.utils.AuthUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -12,12 +12,15 @@ import org.springframework.stereotype.Service;
 public class ParticipantRemovalCheckerService
         extends AbstractAccessCheckerService<ParticipantRemovalCheckerService.ParticipantRemovalAccessData> {
 
-    private final EventService eventService;
+    private final EventAccessService eventAccessService;
 
     @Override
     protected boolean check(ParticipantRemovalAccessData accessData) {
-        return eventService.isEventCreator(accessData.eventId(), accessData.currentUserId())
-                || accessData.currentUserId().equals(accessData.participantId());
+        return eventAccessService.canRemoveParticipant(
+                accessData.eventId(),
+                accessData.currentUserId(),
+                accessData.participantId()
+        );
     }
 
     @Override

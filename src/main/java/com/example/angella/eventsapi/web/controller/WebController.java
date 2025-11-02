@@ -3,6 +3,7 @@ package com.example.angella.eventsapi.web.controller;
 import com.example.angella.eventsapi.entity.Event;
 import com.example.angella.eventsapi.entity.Image;
 import com.example.angella.eventsapi.entity.User;
+import com.example.angella.eventsapi.exception.EntityNotFoundException;
 import com.example.angella.eventsapi.mapper.EventMapper;
 import com.example.angella.eventsapi.repository.EventRepository;
 import com.example.angella.eventsapi.service.*;
@@ -344,43 +345,6 @@ public class WebController {
         }
     }
 
-    // Детали события с явным путем
-    @GetMapping("/event/details/{id}")
-    public String eventDetail(@PathVariable Long id, Model model,
-                              @AuthenticationPrincipal UserDetails userDetails) {
-        try {
-            // Используем новый метод для загрузки события с изображениями
-            Event event = eventService.getEventForDetailView(id);
-            boolean isParticipant = false;
-            boolean isCreator = false;
-
-            if (userDetails != null) {
-                User currentUser = userService.findByUsername(userDetails.getUsername());
-                isParticipant = event.getParticipants().contains(currentUser);
-                isCreator = event.getCreator().getId().equals(currentUser.getId());
-            }
-
-            // Получаем изображения мероприятия через сервис
-            List<Image> eventImages = imageService.getEventImages(id);
-            Image mainImage = eventImages.isEmpty() ? null : eventImages.get(0);
-
-            model.addAttribute("event", event);
-            model.addAttribute("isParticipant", isParticipant);
-            model.addAttribute("isCreator", isCreator);
-            model.addAttribute("tasks", taskService.getTasksForEvent(id));
-            model.addAttribute("checklist", checklistService.getChecklistForEvent(id));
-            model.addAttribute("comments", commentService.findAllByEventId(id));
-            model.addAttribute("eventImages", eventImages);
-            model.addAttribute("mainImage", mainImage);
-
-            return "events/detail";
-        } catch (Exception e) {
-            log.error("Error loading event detail page for id: {}", id, e);
-            model.addAttribute("error", "Мероприятие не найдено");
-            return "error/404";
-        }
-    }
-
     // Упрощенная версия деталей мероприятия
     @GetMapping("/event/details-simple/{id}")
     public String eventDetailSimple(@PathVariable Long id, Model model,
@@ -440,25 +404,43 @@ public class WebController {
         return "redirect:/event/details/" + id + "?left=true";
     }
 
-    @GetMapping("/event/edit/{id}")
-    public String editEventForm(@PathVariable Long id, Model model, Authentication authentication) {
-        if (authentication == null) {
-            return "redirect:/login";
-        }
-
+    @GetMapping("/event/details/{id}")
+    public String eventDetail(@PathVariable Long id, Model model,
+                              @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            Event event = eventService.getById(id);
-            User user = userService.findByUsername(authentication.getName());
+            Event event = eventService.getEventForDetailView(id);
+            boolean isParticipant = false;
+            boolean isCreator = false;
 
-            // Проверка прав доступа
-            if (!event.getCreator().getId().equals(user.getId())) {
-                return "redirect:/event/details/" + id + "?error=access_denied";
+            if (userDetails != null) {
+                try {
+                    User currentUser = userService.findByUsername(userDetails.getUsername());
+                    isParticipant = event.getParticipants().stream()
+                            .anyMatch(participant -> participant.getId().equals(currentUser.getId()));
+                    isCreator = event.getCreator().getId().equals(currentUser.getId());
+                } catch (EntityNotFoundException e) {
+                    log.warn("User not found: {}", userDetails.getUsername());
+                }
             }
 
+            // Получаем изображения мероприятия через сервис
+            List<Image> eventImages = imageService.getEventImages(id);
+            Image mainImage = eventImages.isEmpty() ? null : eventImages.get(0);
+
             model.addAttribute("event", event);
-            return "events/edit";
+            model.addAttribute("isParticipant", isParticipant);
+            model.addAttribute("isCreator", isCreator);
+            model.addAttribute("tasks", taskService.getTasksForEvent(id));
+            model.addAttribute("checklist", checklistService.getChecklistForEvent(id));
+            model.addAttribute("comments", commentService.findAllByEventId(id));
+            model.addAttribute("eventImages", eventImages);
+            model.addAttribute("mainImage", mainImage);
+
+            return "events/detail";
         } catch (Exception e) {
-            return "redirect:/events?error=not_found";
+            log.error("Error loading event detail page for id: {}", id, e);
+            model.addAttribute("error", "Мероприятие не найдено");
+            return "error/404";
         }
     }
 }

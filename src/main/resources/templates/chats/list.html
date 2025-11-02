@@ -103,7 +103,7 @@
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <h5 class="card-title mb-0" th:text="${event.name}">Название мероприятия</h5>
-                                    <th:block th:with="now=${#temporals.createNow()}">
+                                    <th:block th:with="now=${T(java.time.Instant).now()}">
                                         <th:block th:if="${event.startTime.isAfter(now)}">
                                             <span class="badge bg-success chat-status">Предстоящее</span>
                                         </th:block>

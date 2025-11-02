@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.MessageFormat;
 import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -22,6 +23,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final EventAccessService eventAccessService;
 
     public List<Task> getTasksForEvent(Long eventId) {
         return taskRepository.findAllByEventId(eventId);
@@ -31,7 +33,7 @@ public class TaskService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event not found"));
 
-        if (!eventRepository.existsByIdAndParticipantsId(eventId, userId)) {
+        if (!eventAccessService.hasParticipant(eventId, userId)) {
             throw new AccessDeniedException("Only event participants can create tasks");
         }
 
@@ -43,7 +45,7 @@ public class TaskService {
             assignedUser = userRepository.findById(assignedUserId)
                     .orElseThrow(() -> new EntityNotFoundException("Assigned user not found"));
             // Проверяем, что назначенный пользователь является участником события
-            if (!eventRepository.existsByIdAndParticipantsId(eventId, assignedUserId)) {
+            if (!eventAccessService.hasParticipant(eventId, assignedUserId)) {
                 throw new AccessDeniedException("Assigned user must be event participant");
             }
         }
@@ -52,13 +54,12 @@ public class TaskService {
         task.setDescription(description);
         task.setEvent(event);
         task.setCreator(user);
-        task.setAssignedUser(assignedUser); // ДОБАВЛЕНО НАЗНАЧЕНИЕ ПОЛЬЗОВАТЕЛЯ
+        task.setAssignedUser(assignedUser);
         task.setCompleted(false);
 
         return taskRepository.save(task);
     }
 
-    // Обновить метод updateTask для поддержки назначения пользователя
     public Task updateTask(Long taskId, String newDescription, Boolean completed,
                            Long assignedUserId, Long userId) {
         Task task = taskRepository.findById(taskId)
@@ -77,7 +78,7 @@ public class TaskService {
         if (assignedUserId != null) {
             User assignedUser = userRepository.findById(assignedUserId)
                     .orElseThrow(() -> new EntityNotFoundException("Assigned user not found"));
-            if (!eventRepository.existsByIdAndParticipantsId(task.getEvent().getId(), assignedUserId)) {
+            if (!eventAccessService.hasParticipant(task.getEvent().getId(), assignedUserId)) {
                 throw new AccessDeniedException("Assigned user must be event participant");
             }
             task.setAssignedUser(assignedUser);
@@ -86,7 +87,6 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    // Остальные методы остаются без изменений
     public void deleteTask(Long taskId, Long userId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException(
