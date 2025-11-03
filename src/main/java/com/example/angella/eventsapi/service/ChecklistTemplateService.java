@@ -86,4 +86,9 @@ public class ChecklistTemplateService {
         templateItemRepository.deleteByTemplateId(templateId);
         templateRepository.deleteById(templateId);
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<ChecklistTemplate> getAllTemplatesWithItems() {
+        return templateRepository.findTemplatesWithItems();
+    }
 }

@@ -443,4 +443,27 @@ public class WebController {
             return "error/404";
         }
     }
+
+    @GetMapping("/event/edit/{id}")
+    public String editEventForm(@PathVariable Long id, Model model, Authentication authentication) {
+        if (authentication == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            Event event = eventService.getById(id);
+            User currentUser = userService.findByUsername(authentication.getName());
+
+            // Проверяем, что пользователь - создатель мероприятия
+            if (!event.getCreator().getId().equals(currentUser.getId())) {
+                return "redirect:/event/details/" + id + "?error=access_denied";
+            }
+
+            model.addAttribute("event", event);
+            model.addAttribute("categories", categoryService.findAll());
+            return "events/edit";
+        } catch (Exception e) {
+            return "redirect:/events?error=not_found";
+        }
+    }
 }

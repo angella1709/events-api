@@ -135,12 +135,12 @@
                                         </form>
                                     </th:block>
 
-                                    <!-- Кнопка удаления -->
+                                    <!-- Кнопка удаления
                                     <button type="button" class="btn btn-danger delete-user-btn"
                                             th:attr="data-user-id=${user.id}, data-username=${user.username}"
                                             title="Удалить пользователя">
                                         <i class="fas fa-trash"></i>
-                                    </button>
+                                    </button> -->
                                 </div>
                             </td>
                         </tr>
@@ -162,7 +162,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Обработка удаления пользователей
-            const deleteButtons = document.querySelectorAll('.delete-user-btn');
+            /*const deleteButtons = document.querySelectorAll('.delete-user-btn');
 
             deleteButtons.forEach(button => {
                 button.addEventListener('click', function() {
@@ -189,7 +189,7 @@
                         form.submit();
                     }
                 });
-            });
+            });*/
 
             // Автоматическое скрытие alert через 5 секунд
             setTimeout(() => {

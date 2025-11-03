@@ -80,7 +80,8 @@ public class AdminController {
 
     @GetMapping("/events")
     public String eventManagement(Model model) {
-        List<Event> events = eventService.findAll();
+        // Используем метод с инициализацией изображений
+        List<Event> events = eventService.findAllWithImages();
         List<Event> upcomingEvents = eventService.findUpcomingEvents();
 
         long totalParticipants = events.stream()
@@ -113,8 +114,21 @@ public class AdminController {
 
     @GetMapping("/templates")
     public String templateManagement(Model model) {
-        List<ChecklistTemplate> templates = templateService.getAllTemplates();
+        List<ChecklistTemplate> templates = templateService.getAllTemplatesWithItems();
+
+        // Добавляем статистику для отображения
+        long totalItems = templates.stream()
+                .mapToLong(t -> t.getItems() != null ? t.getItems().size() : 0)
+                .sum();
+
+        long categoriesCount = templates.stream()
+                .map(ChecklistTemplate::getCategory)
+                .distinct()
+                .count();
+
         model.addAttribute("templates", templates);
+        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("categoriesCount", categoriesCount);
         return "admin/templates";
     }
 
