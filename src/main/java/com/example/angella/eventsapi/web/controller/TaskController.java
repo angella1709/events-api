@@ -29,7 +29,6 @@ public class TaskController {
 
     @GetMapping("/{eventId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<List<TaskDto>> getTasks(@PathVariable Long eventId) {
         return ResponseEntity.ok(
                 taskService.getTasksForEvent(eventId).stream()

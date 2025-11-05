@@ -54,6 +54,9 @@ public class SecurityConfiguration {
                                 // Chrome DevTools специфичный путь
                                 .requestMatchers("/.well-known/**").permitAll()
 
+                                // WebSocket endpoints
+                                .requestMatchers("/ws/**", "/topic/**", "/app/**", "/user/**").permitAll()
+
                                 // API endpoints (должны быть после публичных)
                                 .requestMatchers("/api/v1/**").authenticated()
 

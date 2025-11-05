@@ -29,7 +29,6 @@ public class ChatController {
 
     @GetMapping("/{eventId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<PageResponse<ChatMessageDto>> getMessages(
             @PathVariable Long eventId,
             PageModel pageModel) {

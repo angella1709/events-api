@@ -42,6 +42,7 @@ public class AdminController {
         model.addAttribute("upcomingEvents", upcomingEvents.size());
         model.addAttribute("recentUsers", users.size() > 5 ? users.subList(0, 5) : users);
         model.addAttribute("templates", templates);
+        model.addAttribute("templatesCount", templates.size());
 
         return "admin/dashboard";
     }
@@ -110,6 +111,7 @@ public class AdminController {
                     .count();
 
             model.addAttribute("events", allEvents);
+            model.addAttribute("totalEvents", allEvents.size()); // ДОБАВЛЕНО
             model.addAttribute("totalParticipants", totalParticipants);
             model.addAttribute("activeEvents", activeEvents);
             model.addAttribute("upcomingEvents", upcomingEvents);

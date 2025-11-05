@@ -43,10 +43,6 @@ public class ChecklistTemplateService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event not found"));
 
-        if (!eventRepository.existsByIdAndParticipantsId(eventId, userId)) {
-            throw new SecurityException("Only event participants can apply templates");
-        }
-
         List<TemplateItem> templateItems = templateItemRepository.findByTemplateId(templateId);
 
         return templateItems.stream()

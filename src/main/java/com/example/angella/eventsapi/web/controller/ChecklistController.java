@@ -29,7 +29,6 @@ public class ChecklistController {
 
     @GetMapping("/{eventId}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<List<ChecklistItemDto>> getChecklist(@PathVariable Long eventId) {
         var items = checklistService.getChecklistForEvent(eventId);
         return ResponseEntity.ok(checklistMapper.toDtoList(items));
