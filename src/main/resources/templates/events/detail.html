@@ -178,10 +178,6 @@
                         <img th:src="@{/images/{filename}(filename=${mainImage.filename})}"
                              class="event-image"
                              alt="Основное изображение мероприятия">
-                        <div class="image-badge">
-                            <i class="fas fa-image me-1"></i>
-                            <span th:text="${eventImages.size()} + ' фото'"></span>
-                        </div>
                     </th:block>
                     <th:block th:unless="${mainImage != null}">
                         <div class="event-image-placeholder">
@@ -262,9 +258,6 @@
                 <div class="d-flex gap-2 flex-wrap">
                     <a th:href="@{/event/edit/{id}(id=${event.id})}" class="btn btn-warning btn-lg">
                         <i class="fas fa-edit me-2"></i>Редактировать мероприятие
-                    </a>
-                    <a th:href="@{/chats/{id}(id=${event.id})}" class="btn btn-info btn-lg">
-                        <i class="fas fa-cog me-2"></i>Управление чатом
                     </a>
                 </div>
             </th:block>

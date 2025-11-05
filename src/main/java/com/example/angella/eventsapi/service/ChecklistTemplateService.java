@@ -73,6 +73,19 @@ public class ChecklistTemplateService {
         template.setName(updatedTemplate.getName());
         template.setDescription(updatedTemplate.getDescription());
         template.setCategory(updatedTemplate.getCategory());
+
+        // Очищаем старые элементы и добавляем новые
+        if (template.getItems() != null) {
+            template.getItems().clear();
+        }
+
+        if (updatedTemplate.getItems() != null) {
+            for (TemplateItem item : updatedTemplate.getItems()) {
+                item.setTemplate(template);
+                template.getItems().add(item);
+            }
+        }
+
         return templateRepository.save(template);
     }
 

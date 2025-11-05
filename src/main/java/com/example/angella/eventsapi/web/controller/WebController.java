@@ -488,4 +488,30 @@ public class WebController {
             return "events/edit";
         }
     }
+
+    @GetMapping("/event/edit/{id}")
+    public String editEventForm(@PathVariable Long id,
+                                Authentication authentication,
+                                Model model) {
+        if (authentication == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            User user = userService.findByUsername(authentication.getName());
+            Event event = eventService.getById(id);
+
+            // Проверяем, что пользователь - создатель мероприятия
+            if (!event.getCreator().getId().equals(user.getId())) {
+                return "redirect:/event/details/" + id + "?error=access_denied";
+            }
+
+            model.addAttribute("event", event);
+            model.addAttribute("categories", categoryService.findAll());
+            return "events/edit";
+        } catch (Exception e) {
+            log.error("Error loading edit form for event: {}", id, e);
+            return "redirect:/event/details/" + id + "?error=not_found";
+        }
+    }
 }
