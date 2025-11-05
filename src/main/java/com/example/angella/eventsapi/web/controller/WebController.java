@@ -8,6 +8,7 @@ import com.example.angella.eventsapi.mapper.EventMapper;
 import com.example.angella.eventsapi.repository.EventRepository;
 import com.example.angella.eventsapi.service.*;
 import com.example.angella.eventsapi.web.dto.CreateEventRequest;
+import com.example.angella.eventsapi.web.dto.UpdateEventRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.example.angella.eventsapi.web.dto.UpdateUserRequest;
@@ -444,26 +445,47 @@ public class WebController {
         }
     }
 
-    @GetMapping("/event/edit/{id}")
-    public String editEventForm(@PathVariable Long id, Model model, Authentication authentication) {
+    @PostMapping("/event/edit/{id}")
+    public String updateEvent(@PathVariable Long id,
+                              @ModelAttribute UpdateEventRequest request,
+                              @RequestParam(value = "eventImage", required = false) MultipartFile eventImage,
+                              Authentication authentication,
+                              Model model) {
         if (authentication == null) {
             return "redirect:/login";
         }
 
         try {
-            Event event = eventService.getById(id);
-            User currentUser = userService.findByUsername(authentication.getName());
+            User user = userService.findByUsername(authentication.getName());
+            Event existingEvent = eventService.getById(id);
 
             // Проверяем, что пользователь - создатель мероприятия
-            if (!event.getCreator().getId().equals(currentUser.getId())) {
+            if (!existingEvent.getCreator().getId().equals(user.getId())) {
                 return "redirect:/event/details/" + id + "?error=access_denied";
             }
 
+            // Обновляем событие
+            Event updatedEvent = eventService.updateEvent(id, request, user.getId());
+
+            // Обработка загрузки нового изображения
+            if (eventImage != null && !eventImage.isEmpty()) {
+                try {
+                    String imageUrl = imageService.uploadEventImage(eventImage, id, user.getId());
+                    log.info("Event image updated successfully: {}", imageUrl);
+                } catch (Exception e) {
+                    log.error("Failed to update event image: {}", e.getMessage());
+                    model.addAttribute("warning", "Изображение не было обновлено: " + e.getMessage());
+                }
+            }
+
+            return "redirect:/event/details/" + id + "?updated=true";
+        } catch (Exception e) {
+            log.error("Error updating event", e);
+            model.addAttribute("error", "Ошибка при обновлении мероприятия: " + e.getMessage());
+            Event event = eventService.getById(id);
             model.addAttribute("event", event);
             model.addAttribute("categories", categoryService.findAll());
             return "events/edit";
-        } catch (Exception e) {
-            return "redirect:/events?error=not_found";
         }
     }
 }

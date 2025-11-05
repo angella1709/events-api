@@ -402,4 +402,22 @@ public class EventService {
             event.getTasks().size();
         }
     }
+
+    @Transactional(readOnly = true)
+    public List<Event> findAllUserEvents(Long userId) {
+        List<Event> allEvents = eventRepository.findAll();
+
+        List<Event> userEvents = allEvents.stream()
+                .filter(event -> event.getParticipants().stream()
+                        .anyMatch(participant -> participant.getId().equals(userId)))
+                .collect(Collectors.toList());
+
+        userEvents.forEach(event -> {
+            initializeLazyCollections(event);
+            List<Image> images = imageService.getEventImages(event.getId());
+            event.setImages(images != null ? new HashSet<>(images) : new HashSet<>());
+        });
+
+        return userEvents;
+    }
 }

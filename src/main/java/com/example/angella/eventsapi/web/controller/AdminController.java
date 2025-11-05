@@ -14,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.Instant;
 import java.util.List;
 
 @Controller
@@ -80,23 +81,34 @@ public class AdminController {
 
     @GetMapping("/events")
     public String eventManagement(Model model) {
-        // Используем метод с инициализацией изображений
-        List<Event> events = eventService.findAllWithImages();
-        List<Event> upcomingEvents = eventService.findUpcomingEvents();
+        // Получаем ВСЕ мероприятия
+        List<Event> allEvents = eventService.findAll();
 
-        long totalParticipants = events.stream()
+        // Рассчитываем статистику
+        long totalParticipants = allEvents.stream()
                 .mapToLong(event -> event.getParticipants().size())
                 .sum();
 
-        long activeEvents = events.stream()
-                .filter(event -> event.getStartTime().isBefore(java.time.Instant.now())
-                        && event.getEndTime().isAfter(java.time.Instant.now()))
+        long activeEvents = allEvents.stream()
+                .filter(event -> {
+                    Instant now = Instant.now();
+                    return event.getStartTime().isBefore(now) && event.getEndTime().isAfter(now);
+                })
                 .count();
 
-        model.addAttribute("events", events);
-        model.addAttribute("upcomingEvents", upcomingEvents);
+        long upcomingEvents = allEvents.stream()
+                .filter(event -> event.getStartTime().isAfter(Instant.now()))
+                .count();
+
+        long completedEvents = allEvents.stream()
+                .filter(event -> event.getEndTime().isBefore(Instant.now()))
+                .count();
+
+        model.addAttribute("events", allEvents);
         model.addAttribute("totalParticipants", totalParticipants);
         model.addAttribute("activeEvents", activeEvents);
+        model.addAttribute("upcomingEvents", upcomingEvents);
+        model.addAttribute("completedEvents", completedEvents);
 
         return "admin/events";
     }

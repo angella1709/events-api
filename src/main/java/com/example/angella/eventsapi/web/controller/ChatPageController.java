@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/chats")
@@ -35,9 +36,11 @@ public class ChatPageController {
             }
 
             User user = userService.findByUsername(userDetails.getUsername());
-            List<Event> userEvents = eventService.findUserEventsWithImages(user.getId());
 
-            model.addAttribute("events", userEvents);
+            // Получаем ВСЕ мероприятия пользователя (будущие и прошедшие)
+            List<Event> allUserEvents = eventService.findAllUserEvents(user.getId());
+
+            model.addAttribute("events", allUserEvents);
             model.addAttribute("currentUser", user);
             return "chats/list";
         } catch (Exception e) {

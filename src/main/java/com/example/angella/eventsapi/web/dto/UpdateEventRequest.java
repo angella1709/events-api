@@ -29,5 +29,4 @@ public class UpdateEventRequest {
     private String city;
 
     private String street;
-
 }

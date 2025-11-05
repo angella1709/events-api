@@ -89,6 +89,15 @@ public class ChecklistTemplateService {
 
     @PreAuthorize("hasRole('ADMIN')")
     public List<ChecklistTemplate> getAllTemplatesWithItems() {
-        return templateRepository.findTemplatesWithItems();
+        List<ChecklistTemplate> templates = templateRepository.findTemplatesWithItems();
+
+        // Явная инициализация ленивой коллекции
+        templates.forEach(template -> {
+            if (template.getItems() != null) {
+                template.getItems().size(); // Это инициализирует коллекцию
+            }
+        });
+
+        return templates;
     }
 }

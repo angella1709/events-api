@@ -351,6 +351,10 @@
                     const checklist = JSON.parse(message.body);
                     updateChecklistList(checklist);
                 });
+            }, function(error) {
+                console.error('WebSocket connection error:', error);
+                // Продолжаем работу без WebSocket
+                console.log('Continuing without WebSocket support');
             });
         }
 
@@ -358,14 +362,22 @@
         async function loadMessages() {
             try {
                 const response = await fetch('/api/v1/chat/' + eventId);
+                if (!response.ok) throw new Error('Failed to load messages');
+
                 const data = await response.json();
 
                 const messagesList = document.getElementById('messagesList');
                 messagesList.innerHTML = '';
 
-                data.data.forEach(message => addMessageToChat(message));
+                if (data.data && data.data.length > 0) {
+                    data.data.forEach(message => addMessageToChat(message));
+                } else {
+                    messagesList.innerHTML = '<div class="text-center text-muted">Нет сообщений</div>';
+                }
             } catch (error) {
                 console.error('Error loading messages:', error);
+                document.getElementById('messagesList').innerHTML =
+                    '<div class="text-center text-danger">Ошибка загрузки сообщений</div>';
             }
         }
 
@@ -373,6 +385,12 @@
         function addMessageToChat(message) {
             const messagesList = document.getElementById('messagesList');
             const isOwn = message.author === currentUsername;
+
+            // Убираем сообщение о загрузке если оно есть
+            const loadingElement = document.getElementById('loadingMessages');
+            if (loadingElement) {
+                loadingElement.remove();
+            }
 
             const messageElement = document.createElement('div');
             messageElement.className = `message ${isOwn ? 'own' : 'other'}`;
@@ -393,7 +411,7 @@
             messagesList.scrollTop = messagesList.scrollHeight;
         }
 
-        // Отправка сообщения
+        // Исправленная функция отправки сообщения
         document.getElementById('messageForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
@@ -403,33 +421,33 @@
             if (!content && selectedImages.length === 0) return;
 
             try {
-                // Отправка текстового сообщения
-                if (content) {
-                    stompClient.send("/app/chat/" + eventId + "/send", {},
-                        JSON.stringify({ content: content }));
+                // Отправка текстового сообщения через REST API
+                const response = await fetch('/api/v1/chat?eventId=' + eventId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
+                    },
+                    body: JSON.stringify({ content: content })
+                });
+
+                if (response.ok) {
+                    const newMessage = await response.json();
+                    addMessageToChat(newMessage);
                     messageInput.value = '';
                     document.getElementById('messageCounter').textContent = '0';
+
+                    // Также отправляем через WebSocket для реального времени
+                    if (stompClient && stompClient.connected) {
+                        stompClient.send("/app/chat/" + eventId + "/send", {},
+                            JSON.stringify({ content: content, author: currentUsername }));
+                    }
+                } else {
+                    throw new Error('Failed to send message');
                 }
-
-                // Отправка изображений
-                for (const image of selectedImages) {
-                    const formData = new FormData();
-                    formData.append('file', image);
-
-                    await fetch('/api/v1/images/chat/' + currentMessageId + '?messageId=' + currentMessageId, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
-                        },
-                        body: formData
-                    });
-                }
-
-                selectedImages = [];
-                document.getElementById('imagePreview').innerHTML = '';
-
             } catch (error) {
                 console.error('Error sending message:', error);
+                alert('Ошибка при отправке сообщения');
             }
         });
 
@@ -463,15 +481,25 @@
         async function loadTasks() {
             try {
                 const response = await fetch('/api/v1/task/' + eventId);
+                if (!response.ok) throw new Error('Failed to load tasks');
+
                 const tasks = await response.json();
                 updateTasksList(tasks);
             } catch (error) {
                 console.error('Error loading tasks:', error);
+                document.getElementById('tasksList').innerHTML =
+                    '<div class="text-center text-muted">Ошибка загрузки задач</div>';
             }
         }
 
         function updateTasksList(tasks) {
             const tasksList = document.getElementById('tasksList');
+
+            if (!tasks || tasks.length === 0) {
+                tasksList.innerHTML = '<div class="text-center text-muted">Нет задач</div>';
+                return;
+            }
+
             tasksList.innerHTML = '';
 
             tasks.forEach(task => {
@@ -491,12 +519,11 @@
                         <input type="checkbox" class="form-check-input task-complete"
                                ${task.completed ? 'checked' : ''}
                                data-task-id="${task.id}">
-                        <button class="btn btn-sm btn-outline-warning edit-task" data-task-id="${task.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
+                        ${task.creator === currentUsername ? `
                         <button class="btn btn-sm btn-outline-danger delete-task" data-task-id="${task.id}">
                             <i class="fas fa-trash"></i>
                         </button>
+                        ` : ''}
                     </div>
                 `;
                 tasksList.appendChild(taskElement);
@@ -507,15 +534,25 @@
         async function loadChecklist() {
             try {
                 const response = await fetch('/api/v1/checklist/' + eventId);
+                if (!response.ok) throw new Error('Failed to load checklist');
+
                 const checklist = await response.json();
                 updateChecklistList(checklist);
             } catch (error) {
                 console.error('Error loading checklist:', error);
+                document.getElementById('checklistList').innerHTML =
+                    '<div class="text-center text-muted">Ошибка загрузки списка</div>';
             }
         }
 
         function updateChecklistList(checklist) {
             const checklistList = document.getElementById('checklistList');
+
+            if (!checklist || checklist.length === 0) {
+                checklistList.innerHTML = '<div class="text-center text-muted">Список пуст</div>';
+                return;
+            }
+
             checklistList.innerHTML = '';
 
             checklist.forEach(item => {
@@ -536,12 +573,11 @@
                         <input type="checkbox" class="form-check-input item-complete"
                                ${item.completed ? 'checked' : ''}
                                data-item-id="${item.id}">
-                        <button class="btn btn-sm btn-outline-warning edit-item" data-item-id="${item.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
+                        ${item.createdBy === currentUsername ? `
                         <button class="btn btn-sm btn-outline-danger delete-item" data-item-id="${item.id}">
                             <i class="fas fa-trash"></i>
                         </button>
+                        ` : ''}
                     </div>
                 `;
                 checklistList.appendChild(itemElement);
@@ -552,15 +588,25 @@
         async function loadTemplates() {
             try {
                 const response = await fetch('/api/v1/public/templates');
+                if (!response.ok) throw new Error('Failed to load templates');
+
                 const templates = await response.json();
                 displayTemplates(templates);
             } catch (error) {
                 console.error('Error loading templates:', error);
+                document.getElementById('templatesList').innerHTML =
+                    '<div class="text-center text-muted">Ошибка загрузки шаблонов</div>';
             }
         }
 
         function displayTemplates(templates) {
             const templatesList = document.getElementById('templatesList');
+
+            if (!templates || templates.length === 0) {
+                templatesList.innerHTML = '<div class="text-center text-muted">Нет доступных шаблонов</div>';
+                return;
+            }
+
             templatesList.innerHTML = '';
 
             templates.forEach(template => {
@@ -655,7 +701,13 @@
         // Функции для работы с задачами
         async function addTask() {
             const form = document.getElementById('taskForm');
-            const formData = new FormData(form);
+            const description = form.querySelector('[name="description"]').value.trim();
+            const assignedUserId = form.querySelector('[name="assignedUserId"]').value;
+
+            if (!description) {
+                alert('Введите описание задачи');
+                return;
+            }
 
             try {
                 const response = await fetch('/api/v1/task?eventId=' + eventId, {
@@ -665,18 +717,26 @@
                         'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
                     },
                     body: JSON.stringify({
-                        description: formData.get('description'),
-                        assignedUserId: formData.get('assignedUserId') || null
+                        description: description,
+                        assignedUserId: assignedUserId || null
                     })
                 });
 
                 if (response.ok) {
                     $('#addTaskModal').modal('hide');
                     form.reset();
-                    loadTasks(); // Перезагружаем список
+                    loadTasks();
+
+                    // Уведомляем через WebSocket
+                    if (stompClient && stompClient.connected) {
+                        stompClient.send("/app/tasks/" + eventId + "/update", {}, "refresh");
+                    }
+                } else {
+                    throw new Error('Failed to create task');
                 }
             } catch (error) {
                 console.error('Error adding task:', error);
+                alert('Ошибка при создании задачи');
             }
         }
 
@@ -688,7 +748,7 @@
                         'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
                     }
                 });
-                loadTasks(); // Обновляем список
+                loadTasks();
             } catch (error) {
                 console.error('Error toggling task:', error);
             }
@@ -703,9 +763,10 @@
                             'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
                         }
                     });
-                    loadTasks(); // Обновляем список
+                    loadTasks();
                 } catch (error) {
                     console.error('Error deleting task:', error);
+                    alert('Ошибка при удалении задачи');
                 }
             }
         }
@@ -713,7 +774,15 @@
         // Функции для работы со списком вещей
         async function addChecklistItem() {
             const form = document.getElementById('checklistForm');
-            const formData = new FormData(form);
+            const name = form.querySelector('[name="name"]').value.trim();
+            const description = form.querySelector('[name="description"]').value.trim();
+            const quantity = form.querySelector('[name="quantity"]').value;
+            const assignedUserId = form.querySelector('[name="assignedUserId"]').value;
+
+            if (!name) {
+                alert('Введите название элемента');
+                return;
+            }
 
             try {
                 const response = await fetch('/api/v1/checklist?eventId=' + eventId, {
@@ -723,20 +792,28 @@
                         'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
                     },
                     body: JSON.stringify({
-                        name: formData.get('name'),
-                        description: formData.get('description'),
-                        quantity: parseInt(formData.get('quantity')) || 1,
-                        assignedUserId: formData.get('assignedUserId') || null
+                        name: name,
+                        description: description,
+                        quantity: parseInt(quantity) || 1,
+                        assignedUserId: assignedUserId || null
                     })
                 });
 
                 if (response.ok) {
                     $('#addChecklistModal').modal('hide');
                     form.reset();
-                    loadChecklist(); // Перезагружаем список
+                    loadChecklist();
+
+                    // Уведомляем через WebSocket
+                    if (stompClient && stompClient.connected) {
+                        stompClient.send("/app/checklist/" + eventId + "/update", {}, "refresh");
+                    }
+                } else {
+                    throw new Error('Failed to create checklist item');
                 }
             } catch (error) {
                 console.error('Error adding checklist item:', error);
+                alert('Ошибка при добавлении элемента');
             }
         }
 
@@ -748,7 +825,7 @@
                         'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
                     }
                 });
-                loadChecklist(); // Обновляем список
+                loadChecklist();
             } catch (error) {
                 console.error('Error toggling item:', error);
             }
@@ -763,9 +840,10 @@
                             'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]').value
                         }
                     });
-                    loadChecklist(); // Обновляем список
+                    loadChecklist();
                 } catch (error) {
                     console.error('Error deleting item:', error);
+                    alert('Ошибка при удалении элемента');
                 }
             }
         }
@@ -786,10 +864,14 @@
 
                 if (response.ok) {
                     $('#templatesModal').modal('hide');
-                    loadChecklist(); // Перезагружаем список
+                    loadChecklist();
+                    alert('Шаблон успешно применен!');
+                } else {
+                    throw new Error('Failed to apply template');
                 }
             } catch (error) {
                 console.error('Error applying template:', error);
+                alert('Ошибка при применении шаблона');
             }
         }
     </script>
