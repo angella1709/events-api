@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -89,7 +90,7 @@ public class AdminController {
             // Получаем ВСЕ мероприятия
             List<Event> allEvents = eventService.findAll();
 
-            // Рассчитываем статистику
+            // УПРОЩЕННАЯ СТАТИСТИКА
             long totalParticipants = allEvents.stream()
                     .mapToLong(event -> event.getParticipants() != null ? event.getParticipants().size() : 0)
                     .sum();
@@ -111,7 +112,7 @@ public class AdminController {
                     .count();
 
             model.addAttribute("events", allEvents);
-            model.addAttribute("totalEvents", allEvents.size()); // ДОБАВЛЕНО
+            model.addAttribute("totalEvents", allEvents.size());
             model.addAttribute("totalParticipants", totalParticipants);
             model.addAttribute("activeEvents", activeEvents);
             model.addAttribute("upcomingEvents", upcomingEvents);
@@ -121,6 +122,12 @@ public class AdminController {
         } catch (Exception e) {
             log.error("Error in event management", e);
             model.addAttribute("error", "Ошибка загрузки мероприятий: " + e.getMessage());
+            model.addAttribute("events", List.of()); // ДОБАВЛЕНО: пустой список при ошибке
+            model.addAttribute("totalEvents", 0);
+            model.addAttribute("totalParticipants", 0);
+            model.addAttribute("activeEvents", 0);
+            model.addAttribute("upcomingEvents", 0);
+            model.addAttribute("completedEvents", 0);
             return "admin/events";
         }
     }
@@ -139,9 +146,9 @@ public class AdminController {
     @GetMapping("/templates")
     public String templateManagement(Model model) {
         try {
-            List<ChecklistTemplate> templates = templateService.getAllTemplatesWithItems();
+            List<ChecklistTemplate> templates = templateService.getAllTemplates();
 
-            // Добавляем статистику для отображения
+            // УПРОЩЕННАЯ СТАТИСТИКА - убираем сложные вычисления
             long totalItems = templates.stream()
                     .mapToLong(t -> t.getItems() != null ? t.getItems().size() : 0)
                     .sum();
@@ -159,15 +166,24 @@ public class AdminController {
         } catch (Exception e) {
             log.error("Error in template management", e);
             model.addAttribute("error", "Ошибка загрузки шаблонов: " + e.getMessage());
+            model.addAttribute("templates", List.of()); // ДОБАВЛЕНО: пустой список при ошибке
+            model.addAttribute("totalItems", 0);
+            model.addAttribute("categoriesCount", 0);
             return "admin/templates";
         }
     }
 
     @GetMapping("/templates/create")
     public String createTemplateForm(Model model) {
-        model.addAttribute("templateRequest", new ChecklistTemplateRequest());
-        model.addAttribute("categories", TemplateCategory.values());
-        return "admin/template-form";
+        try {
+            model.addAttribute("templateRequest", new ChecklistTemplateRequest());
+            model.addAttribute("categories", TemplateCategory.values());
+            model.addAttribute("templateId", null);
+            return "admin/template-form";
+        } catch (Exception e) {
+            log.error("Error loading template creation form", e);
+            return "redirect:/admin/templates?error=load_failed";
+        }
     }
 
     @PostMapping("/templates/create")
@@ -209,31 +225,38 @@ public class AdminController {
 
     @GetMapping("/templates/{id}/edit")
     public String editTemplateForm(@PathVariable Long id, Model model) {
-        ChecklistTemplate template = templateService.getTemplateById(id);
+        try {
+            ChecklistTemplate template = templateService.getTemplateById(id);
 
-        // Преобразуем Entity в DTO
-        ChecklistTemplateRequest templateRequest = new ChecklistTemplateRequest();
-        templateRequest.setName(template.getName());
-        templateRequest.setDescription(template.getDescription());
-        templateRequest.setCategory(template.getCategory());
+            ChecklistTemplateRequest templateRequest = new ChecklistTemplateRequest();
+            templateRequest.setName(template.getName());
+            templateRequest.setDescription(template.getDescription());
+            templateRequest.setCategory(template.getCategory());
 
-        if (template.getItems() != null) {
-            List<TemplateItemRequest> items = template.getItems().stream()
-                    .map(item -> {
-                        TemplateItemRequest itemRequest = new TemplateItemRequest();
-                        itemRequest.setName(item.getName());
-                        itemRequest.setDescription(item.getDescription());
-                        itemRequest.setDefaultQuantity(item.getDefaultQuantity());
-                        return itemRequest;
-                    })
-                    .collect(Collectors.toList());
-            templateRequest.setItems(items);
+            // БЕЗОПАСНАЯ обработка items
+            if (template.getItems() != null && !template.getItems().isEmpty()) {
+                List<TemplateItemRequest> items = template.getItems().stream()
+                        .map(item -> {
+                            TemplateItemRequest itemRequest = new TemplateItemRequest();
+                            itemRequest.setName(item.getName());
+                            itemRequest.setDescription(item.getDescription());
+                            itemRequest.setDefaultQuantity(item.getDefaultQuantity() != null ? item.getDefaultQuantity() : 1);
+                            return itemRequest;
+                        })
+                        .collect(Collectors.toList());
+                templateRequest.setItems(items);
+            } else {
+                templateRequest.setItems(new ArrayList<>()); // ДОБАВЛЕНО: пустой список если нет items
+            }
+
+            model.addAttribute("templateRequest", templateRequest);
+            model.addAttribute("templateId", id);
+            model.addAttribute("categories", TemplateCategory.values());
+            return "admin/template-form";
+        } catch (Exception e) {
+            log.error("Error loading edit form for template: {}", id, e);
+            return "redirect:/admin/templates?error=not_found";
         }
-
-        model.addAttribute("templateRequest", templateRequest);
-        model.addAttribute("templateId", id);
-        model.addAttribute("categories", TemplateCategory.values());
-        return "admin/template-form";
     }
 
     @PostMapping("/templates/{id}/edit")

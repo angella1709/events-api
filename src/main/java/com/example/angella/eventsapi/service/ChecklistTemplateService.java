@@ -9,6 +9,7 @@ import com.example.angella.eventsapi.repository.ChecklistTemplateRepository;
 import com.example.angella.eventsapi.repository.EventRepository;
 import com.example.angella.eventsapi.repository.TemplateItemRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class ChecklistTemplateService {
 
     private final ChecklistTemplateRepository templateRepository;
@@ -26,8 +28,14 @@ public class ChecklistTemplateService {
     private final EventRepository eventRepository;
     private final ChecklistService checklistService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     public List<ChecklistTemplate> getAllTemplates() {
-        return templateRepository.findAll();
+        try {
+            return templateRepository.findAll();
+        } catch (Exception e) {
+            log.error("Error loading all templates", e);
+            return List.of();
+        }
     }
 
     public List<ChecklistTemplate> getTemplatesByCategory(String category) {
@@ -59,8 +67,15 @@ public class ChecklistTemplateService {
 
     @PreAuthorize("hasRole('ADMIN')")
     public ChecklistTemplate getTemplateById(Long id) {
-        return templateRepository.findById(id)
+        ChecklistTemplate template = templateRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Template not found"));
+
+        // БЕЗОПАСНАЯ инициализация ленивой коллекции
+        if (template.getItems() != null) {
+            template.getItems().size(); // Это инициализирует коллекцию
+        }
+
+        return template;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -98,15 +113,24 @@ public class ChecklistTemplateService {
 
     @PreAuthorize("hasRole('ADMIN')")
     public List<ChecklistTemplate> getAllTemplatesWithItems() {
-        List<ChecklistTemplate> templates = templateRepository.findTemplatesWithItems();
+        try {
+            List<ChecklistTemplate> templates = templateRepository.findAll();
 
-        // Явная инициализация ленивой коллекции
-        templates.forEach(template -> {
-            if (template.getItems() != null) {
-                template.getItems().size(); // Это инициализирует коллекцию
-            }
-        });
+            // БЕЗОПАСНАЯ инициализация ленивых коллекций
+            templates.forEach(template -> {
+                try {
+                    if (template.getItems() != null) {
+                        template.getItems().size(); // Это инициализирует коллекцию
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to initialize items for template {}: {}", template.getId(), e.getMessage());
+                }
+            });
 
-        return templates;
+            return templates;
+        } catch (Exception e) {
+            log.error("Error loading templates with items", e);
+            return List.of(); // Возвращаем пустой список при ошибке
+        }
     }
 }

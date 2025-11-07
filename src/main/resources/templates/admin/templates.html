@@ -66,7 +66,7 @@
 
         <!-- Статистика шаблонов -->
         <div class="row mb-4">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card bg-warning text-white">
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
@@ -81,12 +81,12 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card bg-info text-white">
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <div>
-                                <h4 class="mb-0" th:text="${totalItems}">0</h4>
+                                <h4 class="mb-0" th:text="${totalItems != null ? totalItems : 0}">0</h4>
                                 <p class="mb-0">Всего элементов</p>
                             </div>
                             <div class="align-self-center">
@@ -96,31 +96,16 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card bg-success text-white">
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <div>
-                                <h4 class="mb-0" th:text="${categoriesCount}">0</h4>
+                                <h4 class="mb-0" th:text="${categoriesCount != null ? categoriesCount : 0}">0</h4>
                                 <p class="mb-0">Категорий</p>
                             </div>
                             <div class="align-self-center">
                                 <i class="fas fa-tags fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-primary text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="mb-0" th:text="${popularTemplate != null ? popularTemplate.name : 'Нет'}"></h4>
-                                <p class="mb-0">Популярный шаблон</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-star fa-2x"></i>
                             </div>
                         </div>
                     </div>
