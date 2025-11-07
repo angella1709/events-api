@@ -87,10 +87,9 @@ public class AdminController {
     @GetMapping("/events")
     public String eventManagement(Model model) {
         try {
-            // Получаем ВСЕ мероприятия
             List<Event> allEvents = eventService.findAll();
 
-            // УПРОЩЕННАЯ СТАТИСТИКА
+            // ИСПРАВЛЕНИЕ: Правильно вычисляем статистику
             long totalParticipants = allEvents.stream()
                     .mapToLong(event -> event.getParticipants() != null ? event.getParticipants().size() : 0)
                     .sum();
@@ -186,7 +185,7 @@ public class AdminController {
         try {
             model.addAttribute("templateRequest", new ChecklistTemplateRequest());
             model.addAttribute("categories", TemplateCategory.values());
-            model.addAttribute("templateId", null);
+            model.addAttribute("isEdit", false); // Флаг для определения режима
             return "admin/template-form";
         } catch (Exception e) {
             log.error("Error loading template creation form", e);
@@ -245,7 +244,7 @@ public class AdminController {
             templateRequest.setDescription(template.getDescription());
             templateRequest.setCategory(template.getCategory());
 
-            // БЕЗОПАСНАЯ обработка items
+            // Безопасная обработка items
             if (template.getItems() != null && !template.getItems().isEmpty()) {
                 List<TemplateItemRequest> items = template.getItems().stream()
                         .map(item -> {
@@ -262,8 +261,9 @@ public class AdminController {
             }
 
             model.addAttribute("templateRequest", templateRequest);
-            model.addAttribute("templateId", id);
             model.addAttribute("categories", TemplateCategory.values());
+            model.addAttribute("isEdit", true); // Флаг для режима редактирования
+            model.addAttribute("templateId", id); // ID для формы
             return "admin/template-form";
         } catch (Exception e) {
             log.error("Error loading edit form for template: {}", id, e);

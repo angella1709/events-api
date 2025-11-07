@@ -151,7 +151,9 @@
                                 </a>
                                 <button type="button"
                                         class="btn btn-outline-danger"
-                                        th:onclick="|confirmDeleteTemplate(${template.id}, '${#strings.replace(template.name, '''', '\\''')}')|"
+                                        data-template-id="${template.id}"
+                                        data-template-name="${#strings.replace(template.name, '''', '\\''')}"
+                                        onclick="confirmDeleteTemplate(this)"
                                         title="Удалить">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -220,6 +222,27 @@
                     template.style.display = 'none';
                 }
             });
+        }
+
+        function confirmDeleteTemplate(button) {
+            const templateId = button.getAttribute('data-template-id');
+            const templateName = button.getAttribute('data-template-name');
+
+            if (confirm(`Вы уверены, что хотите удалить шаблон "${templateName}"? Все связанные элементы также будут удалены.`)) {
+                // Создаем форму для отправки POST запроса
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/admin/templates/${templateId}/delete`;
+
+                // Добавляем CSRF токен
+                const csrfToken = document.querySelector('input[name="_csrf"]');
+                if (csrfToken) {
+                    form.appendChild(csrfToken.cloneNode());
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+            }
         }
     </script>
 </div>

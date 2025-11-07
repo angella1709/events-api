@@ -45,7 +45,7 @@ public class EventService {
     public List<Event> findAll() {
         List<Event> events = eventRepository.findAll();
         events.forEach(this::initializeLazyCollections);
-        return events;
+        return events != null ? events : List.of(); // Защита от null
     }
 
     @Transactional(readOnly = true)
