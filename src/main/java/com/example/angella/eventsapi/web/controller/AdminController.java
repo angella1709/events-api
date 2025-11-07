@@ -122,7 +122,7 @@ public class AdminController {
         } catch (Exception e) {
             log.error("Error in event management", e);
             model.addAttribute("error", "Ошибка загрузки мероприятий: " + e.getMessage());
-            model.addAttribute("events", List.of()); // ДОБАВЛЕНО: пустой список при ошибке
+            model.addAttribute("events", List.of());
             model.addAttribute("totalEvents", 0);
             model.addAttribute("totalParticipants", 0);
             model.addAttribute("activeEvents", 0);
@@ -148,6 +148,14 @@ public class AdminController {
         try {
             List<ChecklistTemplate> templates = templateService.getAllTemplates();
 
+            // ДОБАВЛЕНО: логирование для отладки
+            log.info("Found {} templates in database", templates.size());
+            templates.forEach(template ->
+                    log.info("Template: id={}, name={}, itemsCount={}",
+                            template.getId(), template.getName(),
+                            template.getItems() != null ? template.getItems().size() : 0)
+            );
+
             // УПРОЩЕННАЯ СТАТИСТИКА - убираем сложные вычисления
             long totalItems = templates.stream()
                     .mapToLong(t -> t.getItems() != null ? t.getItems().size() : 0)
@@ -166,7 +174,7 @@ public class AdminController {
         } catch (Exception e) {
             log.error("Error in template management", e);
             model.addAttribute("error", "Ошибка загрузки шаблонов: " + e.getMessage());
-            model.addAttribute("templates", List.of()); // ДОБАВЛЕНО: пустой список при ошибке
+            model.addAttribute("templates", List.of());
             model.addAttribute("totalItems", 0);
             model.addAttribute("categoriesCount", 0);
             return "admin/templates";
@@ -196,6 +204,9 @@ public class AdminController {
             template.setDescription(templateRequest.getDescription());
             template.setCategory(templateRequest.getCategory());
 
+            // Инициализируем коллекцию items
+            template.setItems(new java.util.HashSet<>());
+
             // Сохраняем шаблон сначала без элементов
             ChecklistTemplate savedTemplate = templateService.createTemplate(template);
 
@@ -218,6 +229,7 @@ public class AdminController {
 
             redirectAttributes.addFlashAttribute("success", "Шаблон успешно создан");
         } catch (Exception e) {
+            log.error("Error creating template", e);
             redirectAttributes.addFlashAttribute("error", "Ошибка при создании шаблона: " + e.getMessage());
         }
         return "redirect:/admin/templates";
@@ -246,7 +258,7 @@ public class AdminController {
                         .collect(Collectors.toList());
                 templateRequest.setItems(items);
             } else {
-                templateRequest.setItems(new ArrayList<>()); // ДОБАВЛЕНО: пустой список если нет items
+                templateRequest.setItems(new ArrayList<>());
             }
 
             model.addAttribute("templateRequest", templateRequest);
@@ -265,9 +277,12 @@ public class AdminController {
                                  RedirectAttributes redirectAttributes) {
         try {
             ChecklistTemplate existingTemplate = templateService.getTemplateById(id);
-            existingTemplate.setName(templateRequest.getName());
-            existingTemplate.setDescription(templateRequest.getDescription());
-            existingTemplate.setCategory(templateRequest.getCategory());
+
+            // Создаем обновленный шаблон
+            ChecklistTemplate updatedTemplate = new ChecklistTemplate();
+            updatedTemplate.setName(templateRequest.getName());
+            updatedTemplate.setDescription(templateRequest.getDescription());
+            updatedTemplate.setCategory(templateRequest.getCategory());
 
             // Обновляем элементы
             if (templateRequest.getItems() != null) {
@@ -277,17 +292,20 @@ public class AdminController {
                             item.setName(itemRequest.getName());
                             item.setDescription(itemRequest.getDescription());
                             item.setDefaultQuantity(itemRequest.getDefaultQuantity());
-                            item.setTemplate(existingTemplate);
+                            item.setTemplate(updatedTemplate);
                             return item;
                         })
                         .collect(Collectors.toSet());
 
-                existingTemplate.setItems(items);
+                updatedTemplate.setItems(items);
+            } else {
+                updatedTemplate.setItems(new java.util.HashSet<>());
             }
 
-            templateService.updateTemplate(id, existingTemplate);
+            templateService.updateTemplate(id, updatedTemplate);
             redirectAttributes.addFlashAttribute("success", "Шаблон успешно обновлен");
         } catch (Exception e) {
+            log.error("Error updating template: {}", id, e);
             redirectAttributes.addFlashAttribute("error", "Ошибка при обновлении шаблона: " + e.getMessage());
         }
         return "redirect:/admin/templates";
