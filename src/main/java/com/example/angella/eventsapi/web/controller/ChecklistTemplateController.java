@@ -39,7 +39,7 @@ public class ChecklistTemplateController {
     }
 
     @PostMapping("/apply")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<List<ChecklistItemDto>> applyTemplate(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody ApplyTemplateRequest request) {

@@ -25,7 +25,7 @@ public class CommentController {
     private final CommentMapper commentMapper;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ORGANIZATION_OWNER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<CommentDto> createComment(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody CreateCommentRequest request,
@@ -40,7 +40,7 @@ public class CommentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ORGANIZATION_OWNER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @Access(checkBy = AccessCheckType.COMMENT)
     public ResponseEntity<?> deleteComment(@PathVariable Long id, @RequestParam Long eventId) {
         commentService.deleteById(id);

@@ -28,14 +28,14 @@ public class ChecklistController {
     private final ChecklistMapper checklistMapper;
 
     @GetMapping("/{eventId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<List<ChecklistItemDto>> getChecklist(@PathVariable Long eventId) {
         var items = checklistService.getChecklistForEvent(eventId);
         return ResponseEntity.ok(checklistMapper.toDtoList(items));
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<ChecklistItemDto> createItem(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -55,7 +55,7 @@ public class ChecklistController {
     }
 
     @PutMapping("/{itemId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<ChecklistItemDto> updateItem(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long itemId,
@@ -74,7 +74,7 @@ public class ChecklistController {
     }
 
     @PatchMapping("/{itemId}/toggle")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<ChecklistItemDto> toggleItem(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -88,7 +88,7 @@ public class ChecklistController {
     }
 
     @DeleteMapping("/{itemId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<Void> deleteItem(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long itemId) {

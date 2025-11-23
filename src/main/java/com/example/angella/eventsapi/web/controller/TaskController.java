@@ -28,7 +28,7 @@ public class TaskController {
     private final TaskMapper taskMapper;
 
     @GetMapping("/{eventId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<List<TaskDto>> getTasks(@PathVariable Long eventId) {
         return ResponseEntity.ok(
                 taskService.getTasksForEvent(eventId).stream()
@@ -38,7 +38,7 @@ public class TaskController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<TaskDto> createTask(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -56,7 +56,7 @@ public class TaskController {
     }
 
     @PutMapping("/{taskId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<TaskDto> updateTask(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long taskId,
@@ -72,7 +72,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/{taskId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<Void> deleteTask(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long taskId) {

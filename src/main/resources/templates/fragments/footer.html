@@ -1,29 +1,31 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<footer th:fragment="footer" class="footer-custom text-light py-4 mt-5">
+<footer th:fragment="footer" class="footer-compact text-light py-2 mt-4">
     <div class="container">
-        <div class="row justify-content-center">  <!-- Добавлен justify-content-center -->
-            <div class="col-md-8">  <!-- Уменьшена ширина колонки -->
-                <div class="row">
-                    <!-- Левая часть - О платформе -->
-                    <div class="col-md-6 text-center text-md-start">  <!-- Добавлены классы выравнивания -->
-                        <h5>EventsPlatform</h5>
-                        <p>Платформа для организации и поиска мероприятий</p>
-                    </div>
+        <div class="row align-items-center">
+            <!-- Левая часть - логотип и описание -->
+            <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
+                <div class="d-flex align-items-center justify-content-center justify-content-md-start">
+                    <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                    <h6 class="mb-0 fw-bold">EventsPlatform</h6>
+                </div>
+                <small class="text-muted">Платформа для организации мероприятий</small>
+            </div>
 
-                    <!-- Правая часть - Контакты -->
-                    <div class="col-md-6 text-center text-md-start">  <!-- Добавлены классы выравнивания -->
-                        <h5>Контакты</h5>
-                        <p>Email: info@eventsplatform.ru</p>
-                        <p>Телефон: +7 (999) 123-45-67</p>
-                    </div>
+            <!-- Правая часть - контакты и копирайт -->
+            <div class="col-md-6 text-center text-md-end">
+                <div class="mb-1">
+                    <small class="text-muted">
+                        <i class="fas fa-envelope me-1"></i>info@eventsplatform.ru
+                    </small>
+                </div>
+                <div>
+                    <small class="text-muted">
+                        &copy; 2025 EventsPlatform. Все права защищены.
+                    </small>
                 </div>
             </div>
-        </div>
-        <hr class="bg-light">
-        <div class="text-center">
-            <p>&copy; 2025 EventsPlatform. Все права защищены.</p>
         </div>
     </div>
 </footer>

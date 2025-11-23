@@ -28,7 +28,7 @@ public class ChatController {
     private final ChatMessageMapper chatMessageMapper;
 
     @GetMapping("/{eventId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<PageResponse<ChatMessageDto>> getMessages(
             @PathVariable Long eventId,
             PageModel pageModel) {
@@ -41,7 +41,7 @@ public class ChatController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @Access(checkBy = AccessCheckType.PARTICIPANT)
     public ResponseEntity<ChatMessageDto> createMessage(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -58,7 +58,7 @@ public class ChatController {
     }
 
     @PutMapping("/{messageId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<ChatMessageDto> updateMessage(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long messageId,
@@ -73,7 +73,7 @@ public class ChatController {
     }
 
     @DeleteMapping("/{messageId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     public ResponseEntity<Void> deleteMessage(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long messageId) {
