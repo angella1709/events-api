@@ -89,7 +89,7 @@ public class AdminController {
         try {
             List<Event> allEvents = eventService.findAll();
 
-            // ИСПРАВЛЕНИЕ: Правильно вычисляем статистику
+            // Безопасный расчет статистики
             long totalParticipants = allEvents.stream()
                     .mapToLong(event -> event.getParticipants() != null ? event.getParticipants().size() : 0)
                     .sum();
@@ -110,16 +110,19 @@ public class AdminController {
                     .filter(event -> event.getEndTime() != null && event.getEndTime().isBefore(now))
                     .count();
 
-            model.addAttribute("events", allEvents);
-            model.addAttribute("totalEvents", allEvents.size());
+            // Передаем безопасные значения
+            model.addAttribute("events", allEvents != null ? allEvents : List.of());
+            model.addAttribute("totalEvents", allEvents != null ? allEvents.size() : 0);
             model.addAttribute("totalParticipants", totalParticipants);
             model.addAttribute("activeEvents", activeEvents);
             model.addAttribute("upcomingEvents", upcomingEvents);
             model.addAttribute("completedEvents", completedEvents);
 
             return "admin/events";
+
         } catch (Exception e) {
             log.error("Error in event management", e);
+            // Значения по умолчанию при ошибке
             model.addAttribute("error", "Ошибка загрузки мероприятий: " + e.getMessage());
             model.addAttribute("events", List.of());
             model.addAttribute("totalEvents", 0);

@@ -263,7 +263,7 @@
             </th:block>
         </div>
 
-        <!-- Блок с призывом к чату для участников -->
+        <!-- Блок с призывом к чату для участников
         <th:block th:if="${isParticipant}">
             <div class="chat-feature">
                 <h3><i class="fas fa-comments me-2"></i>Чат мероприятия</h3>
@@ -272,7 +272,7 @@
                     <i class="fas fa-arrow-right me-2"></i>Перейти в чат
                 </a>
             </div>
-        </th:block>
+        </th:block>-->
 
         <div class="info-grid">
             <!-- Левая колонка -->
@@ -454,30 +454,6 @@
                                 </div>
                             </th:block>
                         </th:block>
-                    </div>
-                </div>
-
-                <!-- Быстрые действия -->
-                <div class="card info-card">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Быстрые действия</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <th:block th:if="${isParticipant}">
-                                <a th:href="@{/chats/{id}(id=${event.id})}" class="btn btn-primary">
-                                    <i class="fas fa-comments me-2"></i>Чат мероприятия
-                                </a>
-                            </th:block>
-                            <a th:href="@{/events}" class="btn btn-outline-primary">
-                                <i class="fas fa-calendar me-2"></i>Все мероприятия
-                            </a>
-                            <th:block th:if="${isCreator}">
-                                <a th:href="@{/event/edit/{id}(id=${event.id})}" class="btn btn-outline-warning">
-                                    <i class="fas fa-edit me-2"></i>Редактировать
-                                </a>
-                            </th:block>
-                        </div>
                     </div>
                 </div>
             </div>

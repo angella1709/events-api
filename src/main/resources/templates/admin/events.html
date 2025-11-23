@@ -63,7 +63,7 @@
         </div>
 
         <!-- Статистика мероприятий -->
-        <div class="row mb-4">
+        <div class="row mb-3">
             <div class="col-md-3">
                 <div class="card bg-primary text-white">
                     <div class="card-body">
@@ -84,7 +84,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <div>
-                                <h4 class="mb-0" th:text="${upcomingEvents != null ? upcomingEvents.size() : 0}">0</h4>
+                                <h4 class="mb-0" th:text="${upcomingEvents != null ? upcomingEvents : 0}">0</h4>
                                 <p class="mb-0">Ближайшие</p>
                             </div>
                             <div class="align-self-center">
@@ -95,26 +95,11 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card bg-info text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="mb-0" th:text="${totalParticipants}">0</h4>
-                                <p class="mb-0">Всего участников</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-users fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
                 <div class="card bg-warning text-white">
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <div>
-                                <h4 class="mb-0" th:text="${activeEvents}">0</h4>
+                                <h4 class="mb-0" th:text="${activeEvents != null ? activeEvents : 0}">0</h4>
                                 <p class="mb-0">Активные сейчас</p>
                             </div>
                             <div class="align-self-center">
@@ -158,12 +143,12 @@
                         <tbody>
                         <tr th:each="event : ${events}" class="event-row">
                             <td>
-                                <th:block th:if="${not #lists.isEmpty(event.images)}">
+                                <th:block th:if="${event.images != null and not #lists.isEmpty(event.images)}">
                                     <img th:src="@{/images/{filename}(filename=${event.images.iterator().next().filename})}"
                                          class="event-image"
                                          th:alt="${event.name}">
                                 </th:block>
-                                <th:block th:if="${#lists.isEmpty(event.images)}">
+                                <th:block th:if="${event.images == null or #lists.isEmpty(event.images)}">
                                     <div class="image-placeholder">
                                         <i class="fas fa-calendar"></i>
                                     </div>
@@ -192,16 +177,21 @@
                                 </div>
                             </td>
                             <td>
-                                <th:block th:with="now=${#temporals.createNow()}">
-                                    <th:block th:if="${event.startTime.isAfter(now)}">
-                                        <span class="badge bg-success">Предстоящее</span>
+                                <th:block th:if="${event.startTime != null and event.endTime != null}">
+                                    <th:block th:with="now=${T(java.time.Instant).now()}">
+                                        <th:block th:if="${event.startTime.isAfter(now)}">
+                                            <span class="badge bg-success">Предстоящее</span>
+                                        </th:block>
+                                        <th:block th:if="${event.startTime.isBefore(now) and event.endTime.isAfter(now)}">
+                                            <span class="badge bg-primary">Активное</span>
+                                        </th:block>
+                                        <th:block th:if="${event.endTime.isBefore(now)}">
+                                            <span class="badge bg-secondary">Завершено</span>
+                                        </th:block>
                                     </th:block>
-                                    <th:block th:if="${event.startTime.isBefore(now) and event.endTime.isAfter(now)}">
-                                        <span class="badge bg-primary">Активное</span>
-                                    </th:block>
-                                    <th:block th:if="${event.endTime.isBefore(now)}">
-                                        <span class="badge bg-secondary">Завершено</span>
-                                    </th:block>
+                                </th:block>
+                                <th:block th:if="${event.startTime == null or event.endTime == null}">
+                                    <span class="badge bg-warning">Неизвестно</span>
                                 </th:block>
                             </td>
                             <td>
