@@ -332,7 +332,7 @@ public class WebController {
                     log.info("Image uploaded successfully: {}", imageUrl);
                 } catch (Exception e) {
                     log.error("Failed to upload event image: {}", e.getMessage());
-                    // Можно добавить сообщение об ошибке, но продолжаем создание события
+                    // Сообщение об ошибке, но продолжаем создание события
                     model.addAttribute("warning", "Изображение не было загружено: " + e.getMessage());
                 }
             }

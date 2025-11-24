@@ -121,29 +121,26 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
 
-        <!-- СЕКЦИЯ ОТЧЕТА - ДОБАВЛЕНА -->
-        <div class="report-section">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h3 class="mb-2">
-                        <i class="fas fa-chart-bar me-2"></i>Статистика платформы
-                    </h3>
-                    <p class="mb-0 opacity-75">
-                        Полный отчет о деятельности пользователей и мероприятиях. Среднее количество участников:
-                        <strong th:text="${averageParticipants != null ? averageParticipants : '0'}">0</strong>
-                    </p>
-                </div>
-                <div class="col-md-4">
-                    <div class="report-buttons">
-                        <a th:href="@{/admin/statistics/report}" class="report-btn">
-                            <i class="fas fa-download"></i>Экспорт отчета
-                        </a>
-                        <button class="report-btn" onclick="showQuickStats()">
-                            <i class="fas fa-chart-pie"></i>Быстрая статистика
-                        </button>
-                        <a th:href="@{/admin/statistics/detailed}" class="report-btn">
-                            <i class="fas fa-analytics"></i>Детальный анализ
-                        </a>
+        <!-- Блок генерации отчета -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Генерация отчета
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <p class="text-muted mb-3">Сгенерируйте полный отчет по статистике платформы</p>
+                <form th:action="@{/admin/generate-report}" method="post" class="d-inline">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fas fa-file-pdf me-2"></i>Сгенерировать отчет
+                    </button>
+                </form>
+
+                <div th:if="${reportGenerated}" class="mt-3">
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Отчет успешно сгенерирован <span th:text="${reportDate}"></span>
                     </div>
                 </div>
             </div>
@@ -176,50 +173,6 @@
                     </div>
                     <div class="stat-number text-warning" th:text="${upcomingEvents}">0</div>
                     <div class="text-muted">Ближайшие мероприятия</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Дополнительная статистика - ДОБАВЛЕНА -->
-        <div class="row mb-4">
-            <div class="col-md-3 mb-3">
-                <div class="stat-card">
-                    <div class="stat-icon text-info">
-                        <i class="fas fa-user-friends"></i>
-                    </div>
-                    <div class="stat-number text-info" th:text="${averageParticipants != null ? averageParticipants : '0'}">0</div>
-                    <div class="text-muted">Среднее кол-во участников</div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="stat-card">
-                    <div class="stat-icon text-secondary">
-                        <i class="fas fa-comments"></i>
-                    </div>
-                    <div class="stat-number text-secondary" th:text="${totalComments != null ? totalComments : '0'}">0</div>
-                    <div class="text-muted">Всего комментариев</div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="stat-card">
-                    <div class="stat-icon text-warning">
-                        <i class="fas fa-tasks"></i>
-                    </div>
-                    <div class="stat-number text-warning" th:text="${totalTasks != null ? totalTasks : '0'}">0</div>
-                    <div class="text-muted">Всего задач</div>
-                    <small class="text-success" th:if="${completedTasksPercentage != null}"
-                           th:text="'✓ ' + ${completedTasksPercentage} + '%'">✓ 0%</small>
-                </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="stat-card">
-                    <div class="stat-icon text-success">
-                        <i class="fas fa-check-square"></i>
-                    </div>
-                    <div class="stat-number text-success" th:text="${totalChecklistItems != null ? totalChecklistItems : '0'}">0</div>
-                    <div class="text-muted">Элементов чек-листов</div>
-                    <small class="text-success" th:if="${completedChecklistPercentage != null}"
-                           th:text="'✓ ' + ${completedChecklistPercentage} + '%'">✓ 0%</small>
                 </div>
             </div>
         </div>

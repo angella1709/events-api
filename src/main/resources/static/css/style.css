@@ -485,3 +485,42 @@ footer {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
+
+/* Стили для админ-панели и отчетов */
+.admin-stats .card {
+    transition: transform 0.2s ease;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-stats .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.progress {
+    height: 8px;
+    border-radius: 4px;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.report-section {
+    border-left: 4px solid #007bff;
+    padding-left: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Анимация появления отчета */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.report-generated {
+    animation: fadeIn 0.5s ease;
+}
