@@ -59,7 +59,11 @@ public class CommentController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateCommentRequest request) {
 
-        Comment updatedComment = commentService.updateComment(id, request.getText());
+        Comment updatedComment = commentService.updateComment(
+                id,
+                request.getText(),
+                AuthUtils.getCurrentUserId(userDetails)
+        );
         return ResponseEntity.ok(commentMapper.toDto(updatedComment));
     }
 }

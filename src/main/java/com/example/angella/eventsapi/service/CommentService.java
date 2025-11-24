@@ -1,6 +1,7 @@
 package com.example.angella.eventsapi.service;
 
 import com.example.angella.eventsapi.entity.Comment;
+import com.example.angella.eventsapi.exception.AccessDeniedException;
 import com.example.angella.eventsapi.exception.EntityNotFoundException;
 import com.example.angella.eventsapi.model.PageModel;
 import com.example.angella.eventsapi.repository.CommentRepository;
@@ -80,9 +81,18 @@ public class CommentService {
     }
 
     @Transactional
-    public Comment updateComment(Long commentId, String newText) {
+    public Comment updateComment(Long commentId, String newText, Long currentUserId) {
         Comment comment = findById(commentId);
+        if (!comment.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("Only comment author can update the comment");
+        }
         comment.setText(newText);
         return commentRepository.save(comment);
+    }
+
+    public boolean isCommentAuthor(Long commentId, Long userId) {
+        return commentRepository.findById(commentId)
+                .map(comment -> comment.getUser().getId().equals(userId))
+                .orElse(false);
     }
 }

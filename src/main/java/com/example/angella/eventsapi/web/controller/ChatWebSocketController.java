@@ -3,9 +3,12 @@ package com.example.angella.eventsapi.web.controller;
 import com.example.angella.eventsapi.entity.ChatMessage;
 import com.example.angella.eventsapi.entity.Task;
 import com.example.angella.eventsapi.entity.ChecklistItem;
+import com.example.angella.eventsapi.entity.User;
+import com.example.angella.eventsapi.exception.EntityNotFoundException;
 import com.example.angella.eventsapi.mapper.ChatMessageMapper;
 import com.example.angella.eventsapi.mapper.ChecklistMapper;
 import com.example.angella.eventsapi.mapper.TaskMapper;
+import com.example.angella.eventsapi.repository.UserRepository;
 import com.example.angella.eventsapi.service.ChatService;
 import com.example.angella.eventsapi.service.TaskService;
 import com.example.angella.eventsapi.service.ChecklistService;
@@ -35,10 +38,15 @@ public class ChatWebSocketController {
     private final ChatMessageMapper chatMessageMapper;
     private final TaskMapper taskMapper;
     private final ChecklistMapper checklistMapper;
+    private final UserRepository userRepository;
 
     private Long getUserId(Principal principal) {
-        // Логика получения ID пользователя из principal
-        return 1L; // Заглушка
+        if (principal == null) return null;
+
+        String username = principal.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+        return user.getId();
     }
 
     @MessageMapping("/chat/{eventId}/send")
