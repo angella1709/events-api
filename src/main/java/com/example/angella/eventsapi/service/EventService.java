@@ -420,4 +420,30 @@ public class EventService {
 
         return userEvents;
     }
+
+    public Long getTotalEventsCount() {
+        return eventRepository.count();
+    }
+
+    public Long getUpcomingEventsCount() {
+        Instant now = Instant.now();
+        return eventRepository.countByStartTimeAfter(now);
+    }
+
+    public Integer getAverageParticipantsPerEvent() {
+        List<Event> events = eventRepository.findAllWithParticipantsCount();
+        if (events.isEmpty()) {
+            return 0;
+        }
+
+        int totalParticipants = events.stream()
+                .mapToInt(event -> event.getParticipants().size())
+                .sum();
+
+        return totalParticipants / events.size(); // Целочисленное среднее
+    }
+
+    public List<Object[]> getMostPopularCategories(int limit) {
+        return eventRepository.findMostPopularCategories(limit);
+    }
 }

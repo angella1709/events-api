@@ -11,4 +11,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     boolean existsByIdAndCreatorId(Long taskId, Long userId);
 
     List<Task> findAllByEventId(Long eventId);
+
+    long countByCompletedTrue();
 }

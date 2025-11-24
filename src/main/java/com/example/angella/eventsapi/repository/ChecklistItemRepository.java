@@ -20,4 +20,6 @@ public interface ChecklistItemRepository extends JpaRepository<ChecklistItem, Lo
 
     @Query("SELECT COUNT(c) FROM ChecklistItem c WHERE c.event.id = :eventId")
     long countTotalItems(@Param("eventId") Long eventId);
+
+    long countByCompletedTrue();
 }

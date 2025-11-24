@@ -116,4 +116,16 @@ public class ChecklistService {
     public boolean isItemCreator(Long itemId, Long userId) {
         return checklistItemRepository.existsByIdAndCreatedById(itemId, userId);
     }
+
+    public Long getTotalItemsCount() {
+        return checklistItemRepository.count();
+    }
+
+    public Integer getCompletedItemsPercentage() {
+        Long total = checklistItemRepository.count();
+        Long completed = checklistItemRepository.countByCompletedTrue();
+
+        if (total == 0) return 0;
+        return (int) ((completed * 100) / total);
+    }
 }

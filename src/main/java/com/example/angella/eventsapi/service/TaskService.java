@@ -103,4 +103,16 @@ public class TaskService {
     public boolean isTaskCreator(Long taskId, Long userId) {
         return taskRepository.existsByIdAndCreatorId(taskId, userId);
     }
+
+    public Long getTotalTasksCount() {
+        return taskRepository.count();
+    }
+
+    public Integer getCompletedTasksPercentage() {
+        Long total = taskRepository.count();
+        Long completed = taskRepository.countByCompletedTrue();
+
+        if (total == 0) return 0;
+        return (int) ((completed * 100) / total);
+    }
 }

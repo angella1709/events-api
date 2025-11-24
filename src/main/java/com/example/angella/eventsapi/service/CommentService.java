@@ -68,4 +68,21 @@ public class CommentService {
         return commentRepository.existsByIdAndEventIdAndUserId(commentId, eventId, authorId);
     }
 
+    public Long getTotalCommentsCount() {
+        return commentRepository.count();
+    }
+
+    public Comment findById(Long id) {
+        return commentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        MessageFormat.format("Comment with id {0} not found!", id)
+                ));
+    }
+
+    @Transactional
+    public Comment updateComment(Long commentId, String newText) {
+        Comment comment = findById(commentId);
+        comment.setText(newText);
+        return commentRepository.save(comment);
+    }
 }

@@ -24,7 +24,6 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final ImageRepository imageRepository;
 
     @Transactional
     public User registerUser(User user) {
@@ -151,5 +150,9 @@ public class UserService {
         }
 
         return user;
+    }
+
+    public Long getTotalUsersCount() {
+        return userRepository.count();
     }
 }

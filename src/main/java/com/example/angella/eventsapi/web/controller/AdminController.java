@@ -3,6 +3,7 @@ package com.example.angella.eventsapi.web.controller;
 import com.example.angella.eventsapi.entity.*;
 import com.example.angella.eventsapi.service.ChecklistTemplateService;
 import com.example.angella.eventsapi.service.EventService;
+import com.example.angella.eventsapi.service.StatisticsService;
 import com.example.angella.eventsapi.service.UserService;
 import com.example.angella.eventsapi.web.dto.ChecklistTemplateRequest;
 import com.example.angella.eventsapi.web.dto.TemplateItemRequest;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -30,23 +32,7 @@ public class AdminController {
     private final UserService userService;
     private final EventService eventService;
     private final ChecklistTemplateService templateService;
-
-    @GetMapping("/dashboard")
-    public String dashboard(Model model) {
-        List<User> users = userService.findAllUsers();
-        List<Event> events = eventService.findAll();
-        List<Event> upcomingEvents = eventService.findUpcomingEvents();
-        List<ChecklistTemplate> templates = templateService.getAllTemplates();
-
-        model.addAttribute("totalUsers", users.size());
-        model.addAttribute("totalEvents", events.size());
-        model.addAttribute("upcomingEvents", upcomingEvents.size());
-        model.addAttribute("recentUsers", users.size() > 5 ? users.subList(0, 5) : users);
-        model.addAttribute("templates", templates);
-        model.addAttribute("templatesCount", templates.size());
-
-        return "admin/dashboard";
-    }
+    private final StatisticsService statisticsService;
 
     @GetMapping("/users")
     public String userManagement(Model model) {
@@ -324,4 +310,37 @@ public class AdminController {
         }
         return "redirect:/admin/templates";
     }
+
+    @GetMapping("/dashboard")
+    public String adminDashboard(Model model) {
+        try {
+            Map<String, Object> stats = statisticsService.getAdminStatistics();
+
+            model.addAttribute("totalUsers", stats.get("totalUsers"));
+            model.addAttribute("totalEvents", stats.get("totalEvents"));
+            model.addAttribute("totalCategories", stats.get("totalCategories"));
+            model.addAttribute("upcomingEvents", stats.get("upcomingEvents"));
+            model.addAttribute("averageParticipants", stats.get("averageParticipantsPerEvent"));
+            model.addAttribute("totalComments", stats.get("totalComments"));
+            model.addAttribute("totalChatMessages", stats.get("totalChatMessages"));
+            model.addAttribute("totalTasks", stats.get("totalTasks"));
+            model.addAttribute("totalChecklistItems", stats.get("totalChecklistItems"));
+            model.addAttribute("completedTasksPercentage", stats.get("completedTasksPercentage"));
+            model.addAttribute("completedChecklistPercentage", stats.get("completedChecklistItemsPercentage"));
+            model.addAttribute("popularCategories", stats.get("mostPopularCategories"));
+
+        } catch (Exception e) {
+            log.error("Error loading admin dashboard", e);
+            model.addAttribute("error", "Ошибка загрузки статистики");
+        }
+
+        return "admin/dashboard";
+    }
+
+    @GetMapping("/statistics/report")
+    @ResponseBody
+    public Map<String, Object> getStatisticsReport() {
+        return statisticsService.getAdminStatistics();
+    }
+
 }

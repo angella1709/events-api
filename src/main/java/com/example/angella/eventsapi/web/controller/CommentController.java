@@ -2,11 +2,14 @@ package com.example.angella.eventsapi.web.controller;
 
 import com.example.angella.eventsapi.aop.AccessCheckType;
 import com.example.angella.eventsapi.aop.Access;
+import com.example.angella.eventsapi.entity.Comment;
 import com.example.angella.eventsapi.mapper.CommentMapper;
 import com.example.angella.eventsapi.service.CommentService;
 import com.example.angella.eventsapi.utils.AuthUtils;
 import com.example.angella.eventsapi.web.dto.CommentDto;
 import com.example.angella.eventsapi.web.dto.CreateCommentRequest;
+import com.example.angella.eventsapi.web.dto.UpdateCommentRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,4 +51,15 @@ public class CommentController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @Access(checkBy = AccessCheckType.COMMENT)
+    public ResponseEntity<CommentDto> updateComment(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateCommentRequest request) {
+
+        Comment updatedComment = commentService.updateComment(id, request.getText());
+        return ResponseEntity.ok(commentMapper.toDto(updatedComment));
+    }
 }

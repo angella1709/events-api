@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -60,4 +61,13 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
 
     @Query("SELECT DISTINCT l.city FROM Location l WHERE LOWER(l.city) LIKE LOWER(CONCAT('%', :search, '%')) ORDER BY l.city")
     List<String> findDistinctCitiesBySearch(@Param("search") String search);
+
+    @Query("SELECT e FROM Event e LEFT JOIN FETCH e.participants")
+    List<Event> findAllWithParticipantsCount();
+
+    @Query("SELECT c.name, COUNT(e) FROM Category c LEFT JOIN c.events e GROUP BY c.id, c.name ORDER BY COUNT(e) DESC")
+    List<Object[]> findMostPopularCategories(@Param("limit") int limit);
+
+    @Query("SELECT COUNT(e) FROM Event e WHERE e.startTime > :currentTime")
+    long countByStartTimeAfter(@Param("currentTime") Instant currentTime);
 }

@@ -55,4 +55,8 @@ public class CategoryService {
                 .collect(Collectors.toSet());
     }
 
+    public Long getTotalCategoriesCount() {
+        return categoryRepository.count();
+    }
+
 }

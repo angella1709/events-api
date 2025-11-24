@@ -383,6 +383,45 @@
                 </div>
             </div>
 
+            <div class="comment" th:each="comment : ${event.comments}" th:id="'comment-' + ${comment.id}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <strong th:text="${comment.author}">Author</strong>
+                        <p class="comment-text mb-1" th:text="${comment.text}">Comment text</p>
+                        <small class="text-muted" th:text="${#temporals.format(comment.createdAt, 'dd.MM.yyyy HH:mm')}">Date</small>
+                    </div>
+                    <div class="comment-actions" th:if="${comment.author == currentUser.username}">
+                        <button class="btn btn-sm btn-outline-primary edit-comment-btn"
+                                th:data-comment-id="${comment.id}"
+                                th:data-comment-text="${comment.text}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <a th:href="@{/api/v1/comment/{id}(id=${comment.id}, eventId=${event.id})}"
+                           class="btn btn-sm btn-outline-danger"
+                           onclick="return confirm('Delete this comment?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Форма редактирования (скрытая) -->
+            <div id="editCommentForm" class="card mt-3" style="display: none;">
+                <div class="card-body">
+                    <h6 class="card-title">Edit Comment</h6>
+                    <form id="editCommentFormContent">
+                        <input type="hidden" id="editCommentId">
+                        <div class="mb-3">
+                            <textarea class="form-control" id="editCommentText" rows="3" required></textarea>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-secondary" onclick="hideEditCommentForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Правая колонка -->
             <div>
                 <!-- Информация о мероприятии -->

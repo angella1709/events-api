@@ -162,4 +162,8 @@ public class ChatService {
 
         chatMessageRepository.save(message);
     }
+
+    public Long getTotalMessagesCount() {
+        return chatMessageRepository.count();
+    }
 }

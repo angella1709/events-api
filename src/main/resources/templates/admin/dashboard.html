@@ -62,6 +62,38 @@
             text-decoration: none;
             color: inherit;
         }
+        /* Стили для секции отчета */
+        .report-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        .report-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .report-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .report-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -87,6 +119,34 @@
             <i class="fas fa-exclamation-circle me-2"></i>
             <span th:text="${error}"></span>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- СЕКЦИЯ ОТЧЕТА - ДОБАВЛЕНА -->
+        <div class="report-section">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h3 class="mb-2">
+                        <i class="fas fa-chart-bar me-2"></i>Статистика платформы
+                    </h3>
+                    <p class="mb-0 opacity-75">
+                        Полный отчет о деятельности пользователей и мероприятиях. Среднее количество участников:
+                        <strong th:text="${averageParticipants != null ? averageParticipants : '0'}">0</strong>
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <div class="report-buttons">
+                        <a th:href="@{/admin/statistics/report}" class="report-btn">
+                            <i class="fas fa-download"></i>Экспорт отчета
+                        </a>
+                        <button class="report-btn" onclick="showQuickStats()">
+                            <i class="fas fa-chart-pie"></i>Быстрая статистика
+                        </button>
+                        <a th:href="@{/admin/statistics/detailed}" class="report-btn">
+                            <i class="fas fa-analytics"></i>Детальный анализ
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Статистика -->
@@ -116,6 +176,50 @@
                     </div>
                     <div class="stat-number text-warning" th:text="${upcomingEvents}">0</div>
                     <div class="text-muted">Ближайшие мероприятия</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Дополнительная статистика - ДОБАВЛЕНА -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="stat-card">
+                    <div class="stat-icon text-info">
+                        <i class="fas fa-user-friends"></i>
+                    </div>
+                    <div class="stat-number text-info" th:text="${averageParticipants != null ? averageParticipants : '0'}">0</div>
+                    <div class="text-muted">Среднее кол-во участников</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-card">
+                    <div class="stat-icon text-secondary">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="stat-number text-secondary" th:text="${totalComments != null ? totalComments : '0'}">0</div>
+                    <div class="text-muted">Всего комментариев</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-card">
+                    <div class="stat-icon text-warning">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-number text-warning" th:text="${totalTasks != null ? totalTasks : '0'}">0</div>
+                    <div class="text-muted">Всего задач</div>
+                    <small class="text-success" th:if="${completedTasksPercentage != null}"
+                           th:text="'✓ ' + ${completedTasksPercentage} + '%'">✓ 0%</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stat-card">
+                    <div class="stat-icon text-success">
+                        <i class="fas fa-check-square"></i>
+                    </div>
+                    <div class="stat-number text-success" th:text="${totalChecklistItems != null ? totalChecklistItems : '0'}">0</div>
+                    <div class="text-muted">Элементов чек-листов</div>
+                    <small class="text-success" th:if="${completedChecklistPercentage != null}"
+                           th:text="'✓ ' + ${completedChecklistPercentage} + '%'">✓ 0%</small>
                 </div>
             </div>
         </div>
@@ -223,6 +327,65 @@
                 });
             }, 5000);
         });
+
+        // Функция для быстрой статистики
+        function showQuickStats() {
+            const stats = {
+                averageParticipants: document.querySelector('.stat-number.text-info').textContent,
+                totalComments: document.querySelector('.stat-number.text-secondary').textContent,
+                totalTasks: document.querySelector('.stat-number.text-warning').textContent,
+                totalChecklist: document.querySelector('.stat-number.text-success').textContent
+            };
+
+            alert(`Быстрая статистика:\n\n` +
+                `• Среднее кол-во участников: ${stats.averageParticipants}\n` +
+                `• Всего комментариев: ${stats.totalComments}\n` +
+                `• Всего задач: ${stats.totalTasks}\n` +
+                `• Элементов чек-листов: ${stats.totalChecklist}`);
+        }
+
+        // Функция для экспорта отчета
+        function exportReport() {
+            fetch('/admin/statistics/report')
+                .then(response => response.json())
+                .then(data => {
+                    const report = `
+Отчет по платформе EventsPlatform
+Дата генерации: ${new Date().toLocaleDateString('ru-RU')}
+
+Основная статистика:
+- Всего пользователей: ${data.totalUsers}
+- Всего мероприятий: ${data.totalEvents}
+- Всего категорий: ${data.totalCategories}
+- Ближайших мероприятий: ${data.upcomingEvents}
+
+Активность:
+- Среднее кол-во участников: ${data.averageParticipantsPerEvent}
+- Всего комментариев: ${data.totalComments}
+- Сообщений в чатах: ${data.totalChatMessages}
+- Всего задач: ${data.totalTasks}
+- Элементов чек-листов: ${data.totalChecklistItems}
+
+Прогресс:
+- Задач выполнено: ${data.completedTasksPercentage}%
+- Чек-листов выполнено: ${data.completedChecklistItemsPercentage}%
+                    `;
+
+                    const blob = new Blob([report], { type: 'text/plain' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `events-platform-report-${new Date().toISOString().split('T')[0]}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(error => {
+                    console.error('Error exporting report:', error);
+                    alert('Ошибка при экспорте отчета');
+                });
+        }
     </script>
 </div>
 </body>
