@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/events") // Изменено с "/api/v1/event" на "/api/v1/events"
+@RequestMapping("/api/v1/events")
 @RequiredArgsConstructor
 public class EventController {
 

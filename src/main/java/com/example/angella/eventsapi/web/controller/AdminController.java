@@ -1,21 +1,25 @@
 package com.example.angella.eventsapi.web.controller;
 
 import com.example.angella.eventsapi.entity.*;
-import com.example.angella.eventsapi.service.ChecklistTemplateService;
-import com.example.angella.eventsapi.service.EventService;
-import com.example.angella.eventsapi.service.StatisticsService;
-import com.example.angella.eventsapi.service.UserService;
+import com.example.angella.eventsapi.service.*;
 import com.example.angella.eventsapi.web.dto.ChecklistTemplateRequest;
 import com.example.angella.eventsapi.web.dto.TemplateItemRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.ByteArrayInputStream;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +37,7 @@ public class AdminController {
     private final EventService eventService;
     private final ChecklistTemplateService templateService;
     private final StatisticsService statisticsService;
+    private final PdfReportService pdfReportService;
 
     @GetMapping("/users")
     public String userManagement(Model model) {
@@ -337,10 +342,130 @@ public class AdminController {
         return "admin/dashboard";
     }
 
-    @GetMapping("/statistics/report")
-    @ResponseBody
-    public Map<String, Object> getStatisticsReport() {
-        return statisticsService.getAdminStatistics();
+    @GetMapping("/report")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String viewReport(Model model) {
+        try {
+            Map<String, Object> stats = statisticsService.getAdminStatistics();
+            model.addAttribute("stats", stats);
+            model.addAttribute("reportDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+            model.addAttribute("activeUsers", userService.getTotalUsersCount());
+            model.addAttribute("totalEvents", eventService.getTotalEventsCount());
+
+            log.info("Report page loaded successfully");
+
+        } catch (Exception e) {
+            log.error("Error loading report page", e);
+            model.addAttribute("error", "Ошибка загрузки отчета: " + e.getMessage());
+        }
+
+        return "admin/report";
     }
 
+    @PostMapping("/generate-report")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String generateReport() {
+        // Просто перенаправляем на страницу отчета
+        return "redirect:/admin/report";
+    }
+
+    @GetMapping("/generate-pdf-report")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<InputStreamResource> generatePdfReport() {
+        try {
+            Map<String, Object> stats = statisticsService.getDetailedStatistics();
+            byte[] pdfBytes = pdfReportService.generateStatisticsReport(stats);
+
+            String filename = "platform-report-" +
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm")) + ".pdf";
+
+            InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(pdfBytes));
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .contentLength(pdfBytes.length)
+                    .body(resource);
+
+        } catch (Exception e) {
+            log.error("Error generating PDF report", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/generate-custom-report")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String generateCustomReport(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(defaultValue = "all") String reportType,
+            Model model) {
+
+        try {
+            Map<String, Object> customStats = statisticsService.getAdminStatistics();
+
+            // Добавляем параметры отчета
+            customStats.put("reportType", getReportTypeDisplayName(reportType));
+            customStats.put("period", generatePeriodDescription(startDate, endDate));
+            customStats.put("isCustomReport", true);
+
+            model.addAttribute("stats", customStats);
+            model.addAttribute("reportGenerated", true);
+            model.addAttribute("isCustomReport", true);
+            model.addAttribute("reportDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+
+            log.info("Custom report generated - Type: {}, Period: {} to {}", reportType, startDate, endDate);
+
+        } catch (Exception e) {
+            log.error("Error generating custom report", e);
+            model.addAttribute("error", "Ошибка при генерации пользовательского отчета: " + e.getMessage());
+        }
+
+        return "admin/dashboard";
+    }
+
+    private String getReportTypeDisplayName(String reportType) {
+        switch (reportType) {
+            case "users": return "Отчет по пользователям";
+            case "events": return "Отчет по мероприятиям";
+            case "activity": return "Отчет по активности";
+            default: return "Полный отчет платформы";
+        }
+    }
+
+    private String generatePeriodDescription(String startDate, String endDate) {
+        if (startDate == null && endDate == null) {
+            return "Все время";
+        } else if (startDate != null && endDate != null) {
+            return "Период: " + startDate + " - " + endDate;
+        } else if (startDate != null) {
+            return "С " + startDate;
+        } else {
+            return "По " + endDate;
+        }
+    }
+
+    @GetMapping("/download-pdf-report")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<InputStreamResource> downloadPdfReport() {
+        try {
+            Map<String, Object> stats = statisticsService.getDetailedStatistics();
+            byte[] pdfBytes = pdfReportService.generateStatisticsReport(stats);
+
+            String filename = "platform-report-" +
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + ".pdf";
+
+            InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(pdfBytes));
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .contentLength(pdfBytes.length)
+                    .body(resource);
+
+        } catch (Exception e) {
+            log.error("Error generating PDF report", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }
